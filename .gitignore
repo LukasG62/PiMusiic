@@ -1,3 +1,7 @@
+# IDE files
+.idea/
+.vscode/
+
 # Prerequisites
 *.d
 
@@ -35,6 +39,11 @@
 *.i*86
 *.x86_64
 *.hex
+bin-pc/*
+bin-pi/*
+# Documentation
+docs/*
+
 
 # Debug files
 *.dSYM/
