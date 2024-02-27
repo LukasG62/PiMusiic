@@ -49,17 +49,17 @@ typedef enum {
 }stepper_motor_pins_t;
 
 /**
- * \enum 7_segment_t
+ * \enum seven_segment_t
  * \brief pin du 7 seg
  *
  */
 typedef enum {
-	7_SEGMENT_SDA = 3, /*!< Valeur de la pin pour communiquer avec le 7 segments*/ 
-	7_SEGMENT_SCL=5,/*!<Valeur de la pin de clock pour l’i2c*/ 
-}7_segment_t;
+	SEVEN_SEGMENT_SDA = 3, /*!< Valeur de la pin pour communiquer avec le 7 segments*/ 
+	SEVEN_SEGMENT_SCL=5,/*!<Valeur de la pin de clock pour l’i2c*/ 
+}seven_segment_t;
 
 /**
- * \enum rfid_lecteur_t
+ * \enum rfid_reader_t
  * \brief pin du lecteur rfid
  *
  */
@@ -69,7 +69,7 @@ typedef enum {
 	RFID_MISO=29,/*!<Master In Slave Out */
 	RFID_SCLK = 28,/*<CLOCK FOR SPI */
                                                                                                                                                                                                                                                  
-}rfid_lecteur_t;
+}rfid_reader_t;
 
 /**
  * \enum captor_proximity_t
@@ -87,44 +87,42 @@ typedef enum {
 /*            P R O T O T Y P E S    D E    F O N C T I O N S               */
 /* ------------------------------------------------------------------------ */
 /**
- * \fn 
- * \brief 
+ * \fn init_wiringpi();
+ * \brief initialiser tout les ports gpio de joy pi
  * \param
  */
 void init_wiringpi();
 
 /**
- * \fn 
- * \brief 
- * \param
+ * \fn is_button_pressed(buttons_keymap_t button);
+ * \brief tester si le bouton est pressé
+ * \param button le bouton a tester
  */
 int is_button_pressed(buttons_keymap_t button);
 
 /**
- * \fn 
- * \brief 
- * \param
+ * \fn  sm_play_note(stepper_motor_pins_t step);
+ * \brief jouer une note sur le step motor
+ * \param stepper_motor_pins_t step step à envoyer
  */
 void sm_play_note(stepper_motor_pins_t step);
 
 /**
- * \fn 
- * \brief 
- * \param
+ * \fn display_bpm(int bpm);
+ * \brief afficher le bpm sur le 7 segments
+ * \param bpm chiffre à afficher
  */
 void display_bpm(int bpm);
 
 /**
- * \fn 
- * \brief 
- * \param
+ * \fn read_rfid();
+ * \brief lis la valeur du badge rfid
  */
 char read_rfid();
 
 /**
- * \fn 
- * \brief 
- * \param
+ * \fn read_proximity_captor();
+ * \brief  lis la distance mesurée par le capteur
  */
 int read_proximity_captor();
 
