@@ -9,7 +9,10 @@
 /*                   E N T Ê T E S    S T A N D A R D S                     */
 /* ------------------------------------------------------------------------ */
 #include <wiringPi.h>
-
+#include <math.h>
+#include <unistd.h>
+#include <wiringPiSPI.h>
+#include <wiringPiI2C.h>
 /* ------------------------------------------------------------------------ */
 /*              C O N S T A N T E S     S Y M B O L I Q U E S               */
 /* ------------------------------------------------------------------------ */
@@ -103,9 +106,9 @@ int is_button_pressed(buttons_keymap_t button);
 /**
  * \fn  sm_play_note(stepper_motor_pins_t step);
  * \brief jouer une note sur le step motor
- * \param stepper_motor_pins_t step step à envoyer
+ * \param delay delai pour changer de pas ( faire x 4 pour un tour )
  */
-void sm_play_note(stepper_motor_pins_t step);
+void sm_play_note(int delay);
 
 /**
  * \fn display_bpm(int bpm);
@@ -118,7 +121,7 @@ void display_bpm(int bpm);
  * \fn read_rfid();
  * \brief lis la valeur du badge rfid
  */
-char read_rfid();
+char* read_rfid(char * tagRfid);
 
 /**
  * \fn read_proximity_captor();
