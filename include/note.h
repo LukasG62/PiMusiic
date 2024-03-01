@@ -12,8 +12,8 @@
 /* ------------------------------------------------------------------------ */
 /*              C O N S T A N T E S     S Y M B O L I Q U E S               */
 /* ------------------------------------------------------------------------ */
-#define CHANNEL_MAX_NOTES 50
-#define MUSIC_MAX_CHANNELS 3
+#define CHANNEL_MAX_NOTES 4096 /*!< Nombre de notes maximum dans un channel doit tenir sur n symboles hexadécimaux */
+#define MUSIC_MAX_CHANNELS 3 /*!< Nombre de channels maximum dans une musique */
 
 //Fréquences des notes
 #define NOTE_C_FQ 261.63 /*!< Fréquence du DO à l’octave de référence */
@@ -44,6 +44,7 @@
 #define NOTE_AS_NAME "A#"/*!< Nom du LA# à l’octave de référence */
 #define NOTE_B_NAME "B"/*!< Nom du SI à l’octave de référence */
 #define NOTE_NA_NAME "--"/*!< Nom d'une non note */
+#define NB_NOTES 13 /*!< Nombre de notes dans une octave en incluant la non note */
 
 /* ------------------------------------------------------------------------ */
 /*              D É F I N I T I O N S   D E   T Y P E S                     */
@@ -59,6 +60,7 @@ typedef enum {
 	INSTRUMENT_SIN,/*!< Utilisation d’un signal sinusoïdale */
 	INSTRUMENT_SAWTOOTH,/*!< Utilisation d’un signal en dent de scie*/
 	INSTRUMENT_TRIANGLE, /*!< Utilisation d’un signal en triangle*/
+	INSTRUMENT_NA /*!< Pas d’instrument*/
 }instrument_t;
 
 
@@ -89,12 +91,23 @@ typedef struct {
 }note_t;
 
 /**
+ * \struct scale_t
+ * \brief Structure representant une gamme
+*/
+typedef struct {
+	char list_scale[NB_NOTES][3];/*!< Liste des notes de la gamme*/
+	short nbNotes;/*!< Nombre de note dans la gamme*/
+	short current; /*!< position dans la gamme*/
+}scale_t;
+
+
+/**
  * \struct channel_t
  * \brief Structure pour jouer les notes dans les channels
  */
 typedef struct {
 	short id ; /*!< Identifiant du channel*/ 
-	note_t notes [CHANNEL_MAX_NOTES];/*!< Nombre de note (dernière note non vide)*/
+	note_t notes[CHANNEL_MAX_NOTES];/*!< Nombre de note (dernière note non vide)*/
 	int nbNotes;/*!< Fréquence en Hz à l’octave de référence*/
 }channel_t;
 
@@ -105,13 +118,8 @@ typedef struct {
 typedef struct {
 	struct timeval date;/*!< Date de création de la musique*/
 	channel_t channels [MUSIC_MAX_CHANNELS];/*!< Les canaux disponibles */
-	int bpm;/*!< Le bpm de la musique*/
+	short bpm;/*!< Le bpm de la musique*/
 }music_t;
-
-/* ------------------------------------------------------------------------ */
-/*                 V A R I A B L E S    G L O B A L E S                     */
-/* ------------------------------------------------------------------------ */
-char* list_scale [13] = {NOTE_C_NAME,NOTE_CS_NAME,NOTE_D_NAME,NOTE_DS_NAME,NOTE_E_NAME,NOTE_F_NAME,NOTE_FS_NAME,NOTE_G_NAME,NOTE_GS_NAME,NOTE_A_NAME,NOTE_AS_NAME,NOTE_B_NAME,NOTE_NA_NAME};
 
 
 /* ------------------------------------------------------------------------ */
@@ -129,7 +137,7 @@ char* list_scale [13] = {NOTE_C_NAME,NOTE_CS_NAME,NOTE_D_NAME,NOTE_DS_NAME,NOTE_
 note_t create_note(char note[3], double frequency, short octave,instrument_t instrument, time_duration_t time);
 
 /**
- * \fn void mod_note(note_t noteModif, char[3] note, double frequency, short octave,instrument_t instrument, time_t time);
+ * \fn note_t *mod_note(note_t *noteModif,char note[3], double frequency, short octave,instrument_t instrument, time_duration_t time);
  * \brief modifie la note avec les param donnés
  * \param noteModif note à modifier
  * \param note Nom de la note
@@ -138,28 +146,57 @@ note_t create_note(char note[3], double frequency, short octave,instrument_t ins
  * \param instrument Istrument sur lequel la jouer
  * \param time Durée de la note
  */
-note_t * mod_note(note_t * noteModif,char note[3], double frequency, short octave,instrument_t instrument, time_duration_t time);
+note_t *mod_note(note_t *noteModif,char note[3], double frequency, short octave,instrument_t instrument, time_duration_t time);
+
 
 /**
- * \fn char* get_next_note(char[3] note);
- * \brief récupérer la note suivante avec les paramètres donnés
- * \param note note de référence 
+ * \fn scale_t init_scale()
+ * \brief Initialiser la gamme
+ * \return la gamme initialisée
+ * \details Cette fonction initialise la gamme avec le nom des notes
+*/
+scale_t init_scale();
+
+/**
+ * \fn char* get_next_note(scale_t *scale);
+ * \brief récupérer la note suivante
+ * \param scale la gamme
+ * \return la note suivante
+ * \note Elle met à jour la position dans la gamme
  */
-char* get_next_note(char note[3] );
+char *get_next_note(scale_t *scale);
 
 /**
- * \fn char* get_previous_note(char[3] note);
+ * \fn char* get_previous_note(scale_t *scale);
  * \brief récupérer la note précédente avec les paramètres donnés
  * \param note note de référence 
  */
-char* get_previous_note(char note[3]);
+char *get_previous_note(scale_t *scale);
 
 /**
- * \fn note_t * cp_note(note_t * dest, note_t src);
+ * \fn note_t *cp_note(note_t *dest, note_t src);
  * \brief copier les données d'une note vers une autre
  * \param dest note qui va etre modifiée
  * \param src note qui va etre copiée 
  */
-note_t * cp_note(note_t * dest, note_t src);
+note_t *cp_note(note_t *dest, note_t src);
+
+/**
+ * \fn void init_channel(channel_t *channel);
+ * \brief Initialiser un channel avec des notes vides
+ * \param channel le channel à initialiser
+ * \param id l'identifiant du channel
+ * \see channel_t
+ */
+void init_channel(channel_t *channel, int id);
+
+/**
+ * \fn init_music(music_t *music, short bpm);
+ * \brief Initialiser une musique avec des channels vides
+ * \param music la musique à initialiser
+ * \param bpm le bpm de la musique
+*/
+void init_music(music_t *music, short bpm);
+
 
 #endif

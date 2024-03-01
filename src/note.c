@@ -2,10 +2,8 @@
 /*                   E N T Ê T E S    S T A N D A R D S                     */
 /* ------------------------------------------------------------------------ */
 #include "note.h"
-/* ------------------------------------------------------------------------ */
-/*            P R O T O T Y P E S    D E    F O N C T I O N S               */
-/* ------------------------------------------------------------------------ */
-int get_scale(char note [3]);
+
+
 /* ------------------------------------------------------------------------ */
 /*                  C O D E    D E S    F O N C T I O N S                   */
 /* ------------------------------------------------------------------------ */
@@ -47,35 +45,53 @@ note_t* mod_note(note_t * noteModif,char note[3], double frequency, short octave
 	return noteModif;
 }
 
-/**
- * \fn char* get_next_note(char[3] note);
- * \brief récupérer la note suivante avec les paramètres donnés
- * \param note note de référence 
- */
 
-char* get_next_note(char note[3] ){
-	int result = get_scale(note);
-	if(result == 12)
-		result = 0;
-	else
-		result = result+1;
-	
-	return list_scale[result];
+/**
+ * \fn scale_t init_scale()
+ * \brief Initialiser la gamme
+ * \return la gamme initialisée
+ * \details Cette fonction initialise la gamme avec le nom des notes
+*/
+scale_t init_scale() {
+	scale_t scale;
+	scale.current = 0;
+	scale.nbNotes = 13;
+	strcpy(scale.list_scale[0], NOTE_NA_NAME);
+	strcpy(scale.list_scale[1], NOTE_C_NAME);
+	strcpy(scale.list_scale[2], NOTE_CS_NAME);
+	strcpy(scale.list_scale[3], NOTE_D_NAME);
+	strcpy(scale.list_scale[4], NOTE_DS_NAME);
+	strcpy(scale.list_scale[5], NOTE_E_NAME);
+	strcpy(scale.list_scale[6], NOTE_F_NAME);
+	strcpy(scale.list_scale[7], NOTE_FS_NAME);
+	strcpy(scale.list_scale[8], NOTE_G_NAME);
+	strcpy(scale.list_scale[9], NOTE_GS_NAME);
+	strcpy(scale.list_scale[10], NOTE_A_NAME);
+	strcpy(scale.list_scale[11], NOTE_AS_NAME);
+	strcpy(scale.list_scale[12], NOTE_B_NAME);
+	return scale;
 }
 
 /**
- * \fn char* get_previous_note(char[3] note);
+ * \fn char* get_next_note(scale_t *scale);
+ * \brief récupérer la note suivante
+ * \param scale la gamme
+ * \return la note suivante
+ * \note Elle met à jour la position dans la gamme
+ */
+char *get_next_note(scale_t *scale) {
+	scale->current = (scale->current + 1) % scale->nbNotes;
+	return scale->list_scale[scale->current];
+}
+
+/**
+ * \fn char* get_previous_note(scale_t *scale);
  * \brief récupérer la note précédente avec les paramètres donnés
  * \param note note de référence 
  */
-char* get_previous_note(char note[3] ){
-	int result = get_scale(note);
-	if(result == 0)
-		result = 12;
-	else
-		result = result-1;
-	
-	return list_scale[result];
+char *get_previous_note(scale_t *scale) {
+	scale->current = (scale->current - 1) % scale->nbNotes;
+	return scale->list_scale[scale->current];
 }
 
 /**
@@ -93,9 +109,27 @@ note_t * cp_note(note_t * dest, note_t src){
 	return dest;
 }
 
-int get_scale(char note[3]){
-	for(int i = 0; i<13 ; i++){
-		if(!strncmp(note,list_scale[i],3))
-			return i	;
-	}
+/**
+ * \fn void init_channel(channel_t *channel);
+ * \brief Initialiser un channel avec des notes vides
+ * \param channel le channel à initialiser
+ * \param id l'identifiant du channel
+ * \see channel_t
+ */
+void init_channel(channel_t *channel, int id) {
+	note_t note = create_note(NOTE_NA_NAME, NOTE_NA_FQ, -1, INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	for (int i = 0; i < CHANNEL_MAX_NOTES; i++) channel->notes[i] = note;
+	channel->nbNotes = 0; // Aucune note non vide
+	channel->id  = id;
+}
+
+/**
+ * \fn init_music(music_t *music, short bpm);
+ * \brief Initialiser une musique avec des channels vides
+ * \param music la musique à initialiser
+ * \param bpm le bpm de la musique
+*/
+void init_music(music_t *music, short bpm) {
+	music->bpm = bpm;
+	for (int i = 0; i < MUSIC_MAX_CHANNELS; i++) init_channel(&music->channels[i], i);
 }
