@@ -19,6 +19,8 @@ void init_colors() {
     // Initialisation des couleurs
     // TODO : CHANGER LES COULEURS
     init_pair(COLOR_PAIR_MENU, COLOR_BLUE, COLOR_WHITE);
+    init_pair(COLOR_PAIR_MENU_WARNING, COLOR_RED, COLOR_WHITE);
+    init_pair(COLOR_PAIR_MENU_PROMPT, COLOR_GREEN, COLOR_WHITE);
     init_pair(COLOR_PAIR_SEQ, COLOR_WHITE, COLOR_BLACK);
     init_pair(COLOR_PAIR_SEQ_SELECTED, COLOR_BLACK, COLOR_WHITE);
     init_pair(COLOR_PAIR_SEQ_BORDER, COLOR_WHITE, COLOR_BLACK);
@@ -55,6 +57,38 @@ int create_custom_colors(int color_id, const char *color) {
 }
 
 /**
+ * \fn void init_menu(const char *title, const char *text)
+ * \brief Initialisation du menu ncurses
+ * \details Cette fonction initialise le menu en affichant les bordures, le titre et le texte
+ * \param title Le titre du menu
+ * \param text Le texte du menu
+ * \param centered Centre le texte verticalement si différent de 0
+ * \note Elle ne gère pas la navigation dans le menu
+ */
+void init_menu(const char *title, const char *text, int centered) {
+    int lenTitle = strlen(title);
+    int lenText = strlen(text);
+    // On change la couleur du background
+    wbkgd(stdscr, COLOR_PAIR(COLOR_PAIR_MENU));
+    // On ajoute les bordures
+    box(stdscr, 0, 0);
+    // On affiche le titre centrée en haut dans la bordure en gras
+    attron(COLOR_PAIR(COLOR_PAIR_MENU) | A_BOLD);
+    mvprintw(0, (RPI_COLS - lenTitle) / 2, "%s", title);
+    attroff(COLOR_PAIR(COLOR_PAIR_MENU) | A_BOLD);
+
+    // Si le texte doit être centré
+    if (centered) {
+        // On centre le texte verticalement
+        mvprintw(RPI_LINES/2, (RPI_COLS - lenText) / 2, "%s", text);
+    }
+    else {
+        mvprintw(3, 4, "%s", text);
+    }
+    refresh();
+}
+
+/**
  * \fn choice_t create_menu(const char *choices[], int n_choices, int highlight, choices_t choices)
  * \brief Création d'un menu ncurses
  * \details Cette fonction crée un menu ncurses
@@ -70,28 +104,16 @@ choices_t create_menu(const char *title, const char *text, char **choices, int n
     clear(); // on nettoie l'écran
     int c; // la touche pressée
     int curr = highlight; // le choix actuel
-    int lenTitle = strlen(title);
-    int lenText = strlen(text);
-
-    // On change la couleur du background
-    wbkgd(stdscr, COLOR_PAIR(COLOR_PAIR_MENU));
-    // On ajoute les bordures
-    box(stdscr, 0, 0);
-    // On affiche le titre centrée en haut dans la bordure en gras
-    attron(COLOR_PAIR(COLOR_PAIR_MENU) | A_BOLD);
-    mvprintw(0, (RPI_COLS - lenTitle) / 2, "%s", title);
-    attroff(COLOR_PAIR(COLOR_PAIR_MENU) | A_BOLD);
-    // On affiche le texte en dessous du titre
-    mvprintw(3, (RPI_COLS - lenText) / 2, "%s", text);
+    init_menu(title, text, 0); // Initialisation du menu
 
     // On affiche les choix
     for (int i = 0; i < nbChoices; i++) {
         if (i == curr) {
             attron(A_REVERSE);
-            mvprintw(5 + i, (RPI_COLS - lenText) / 2 + 4, "%s", choices[i]);
+            mvprintw(5 + i, 8, "%s", choices[i]);
         } 
         else {
-            mvprintw(5 + i, (RPI_COLS - lenText) / 2 + 4, "%s", choices[i]);
+            mvprintw(5 + i, 8, "%s", choices[i]);
         }
         attroff(A_REVERSE);
     }
@@ -112,7 +134,7 @@ choices_t create_menu(const char *title, const char *text, char **choices, int n
         }
         for (int i = 0; i < nbChoices; i++) {
             if (i == curr) attron(A_REVERSE);
-            mvprintw(5 + i,  (RPI_COLS) / 2, "%s", choices[i]);
+            mvprintw(5 + i, 8, "%s", choices[i]);
             attroff(A_REVERSE);
         }
     }
@@ -161,7 +183,7 @@ choices_t show_main_menu() {
     // On définit le titre du menu
     char title[] = "Pimusic Application";
     // On définit le texte du menu
-    char text[] = "Welcome to Pimusic Application, please choose an option :";
+    char text[] = "Welcome to Pimusic, please choose an option :";
     // On définit les choix du menu
     char *choices[] = {
         "1. Connect to retrieve music",
@@ -190,5 +212,74 @@ choices_t show_main_menu() {
  * \see choices_t
  */
 choices_t show_connection_menu() {
+    // Affichage du menu
+}
 
+
+/**
+ * \fn choices_t show_create_music_menu
+ * \brief Affichage du menu de création de musique
+ * \details Cette fonction affiche le menu de création de musique et gère la navigation dans le menu
+ * \param music La musique à créer
+ * \param connected Si l'utilisateur est connecté
+ * \note Si l'utilisateur n'est pas connecté, il ne peut pas sauvegarder la musique
+ * \note music doit être initialisé et alloué
+ * \return Le choix de l'utilisateur
+ * \see choices_t
+ * \see music_t
+ */
+choices_t show_create_music_menu(music_t *music, int connected) {
+    init_menu("Create music", "", 1);
+    music->bpm = 120;
+    gettimeofday(&music->date, NULL);
+    if(connected == 0) {
+        attron(COLOR_PAIR(COLOR_PAIR_MENU_WARNING) | A_BOLD);
+        mvprintw(3, 4, "%s", "Warning : You're in offline mode, you can't save your music !");
+        attroff(COLOR_PAIR(COLOR_PAIR_MENU_WARNING) | A_BOLD);
+    }
+    attron(COLOR_PAIR(COLOR_PAIR_MENU | A_BOLD));
+    mvprintw(5, 4, "%s", "Creation date : ");
+    attroff(COLOR_PAIR(COLOR_PAIR_MENU | A_BOLD));
+    attron(COLOR_PAIR(COLOR_PAIR_MENU_PROMPT));
+    mvprintw(5, 20, "%ld", music->date.tv_sec);
+    attroff(COLOR_PAIR(COLOR_PAIR_MENU_PROMPT));
+
+    attron(COLOR_PAIR(COLOR_PAIR_MENU | A_BOLD));
+    mvprintw(7, 4, "%s", "Select the bpm by pressing the arrows : ");
+    
+    attroff(COLOR_PAIR(COLOR_PAIR_MENU | A_BOLD));
+    attron(COLOR_PAIR(COLOR_PAIR_MENU_PROMPT));
+    mvprintw(7, 45, "%3d", music->bpm);
+    attroff(COLOR_PAIR(COLOR_PAIR_MENU_PROMPT));
+
+    // Option pour créer ou retourner au menu principal en bas de l'écran
+    attron(COLOR_PAIR(COLOR_PAIR_MENU | A_BOLD));
+    mvprintw(RPI_LINES - 3, 4, "%s", "[BTN0] Return to main menu");
+    mvprintw(RPI_LINES - 3, RPI_COLS-22, "%s", "[BTN1] Create music");
+    attroff(COLOR_PAIR(COLOR_PAIR_MENU | A_BOLD));
+    refresh();
+    // On gère la navigation dans le menu
+    int c;
+    while(1) {
+        c = getch();
+        switch(c) {
+            case KEY_UP:
+                if (music->bpm < 300) music->bpm++;
+                break;
+            case KEY_DOWN:
+                if (music->bpm > 0) music->bpm--;
+                break;
+            case 10:
+                return CHOICE_SEQUENCER;
+            
+            case 27:
+                return CHOICE_MAIN_MENU;
+
+            break;
+        }
+        attron(COLOR_PAIR(COLOR_PAIR_MENU_PROMPT));
+        mvprintw(7, 45, "%3d", music->bpm);
+        attroff(COLOR_PAIR(COLOR_PAIR_MENU_PROMPT));
+    }
+    refresh();
 }
