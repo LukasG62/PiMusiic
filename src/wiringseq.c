@@ -5,7 +5,12 @@
 /* ------------------------------------------------------------------------ */
 /*            P R O T O T Y P E S    D E    F O N C T I O N S               */
 /* ------------------------------------------------------------------------ */
-
+/**
+ * \fn is_button_pressed(buttons_keymap_t button);
+ * \brief tester si le bouton est pressé dans la matrice
+ * \param button le bouton a tester
+ */
+int is_button_pressed_matrix(buttons_keymap_t button);
 /* ------------------------------------------------------------------------ */
 /*                  C O D E    D E S    F O N C T I O N S                   */
 /* ------------------------------------------------------------------------ */
@@ -19,64 +24,44 @@ void init_wiringpi(){
 	wiringPiSetup();
 	
 	//on initialise le SPI ( channel , frequency ) 
-	rfid_reader_t rfid = RFID_CS;
-	wiringPiSPISetup (rfid, 13560000);
+	wiringPiSPISetup (RFID_CS, 13560000);
 	
 	//on initialise I2C ( nb de device ) 
 	 wiringPiI2CSetup (1) ;
 	 
 	//on configure les boutons
-	buttons_keymap_t buttons = BUTTON_CHANGEMODE;
-	pinMode (buttons, INPUT);
-	buttons = BUTTON_UP;
-	pinMode (buttons, INPUT);
-	buttons = BUTTON_DOWN;
-	pinMode (buttons, INPUT);
-	buttons = BUTTON_LEFT;
-	pinMode (buttons, INPUT);
-	buttons = BUTTON_RIGHT;
-	pinMode (buttons, INPUT);
-	buttons = BUTTON_CH1NSAVE;
-	pinMode (buttons, INPUT);
-	buttons = BUTTON_CH2NQUIT;
-	pinMode (buttons, INPUT);
-	buttons =BUTTON_CH3NPlay;
-	pinMode (buttons, INPUT);
+	
+	pinMode (BUTTON_UP, INPUT);
+	pinMode (BUTTON_DOWN, INPUT);
+	pinMode (BUTTON_LEFT, INPUT);
+	pinMode (BUTTON_RIGHT, INPUT);
+	pinMode (BUTTON_COL4, OUTPUT);
+	pinMode (BUTTON_COL3, OUTPUT);
+	pinMode (BUTTON_ROW2, INPUT);
+	pinMode (BUTTON_ROW1, INPUT);
 	
 	
 	//on configure les step du SM
-	stepper_motor_pins_t sm = SM_STEP1;
-	pinMode (sm, OUTPUT);
-	sm=SM_STEP2;
-	pinMode (sm, OUTPUT);
-	sm=SM_STEP3;
-	pinMode (sm, OUTPUT);
-	sm=SM_STEP4;
-	pinMode (sm, OUTPUT);
+	pinMode (SM_STEP1, OUTPUT);
+	pinMode (SM_STEP2, OUTPUT);
+	pinMode (SM_STEP3, OUTPUT);
+	pinMode (SM_STEP4, OUTPUT);
 	
 	
 	//on configure le 7 segment_t
-	seven_segment_t sevenSeg = SEVEN_SEGMENT_SDA;
-	pinMode (sevenSeg, OUTPUT);
-	sevenSeg=SEVEN_SEGMENT_SCL;
-	pinMode (sevenSeg, GPIO_CLOCK);
+	pinMode (SEVEN_SEGMENT_SDA, OUTPUT);
+	pinMode (SEVEN_SEGMENT_SCL, GPIO_CLOCK);
 	
 	
 	//on configure le rfid
-	rfid = RFID_MOSI;
-	pinMode (rfid, OUTPUT);
-	rfid = RFID_MISO;
-	pinMode(rfid,INPUT);
-	rfid = RFID_SCLK;
-	pinMode(rfid,GPIO_CLOCK);
-	rfid = RFID_CS;
-	pinMode(rfid,OUTPUT);
+	pinMode (RFID_MOSI, OUTPUT);
+	pinMode(RFID_MISO,INPUT);
+	pinMode(RFID_SCLK,GPIO_CLOCK);
+	pinMode( RFID_CS,OUTPUT);
 	
 	//on configure le capteur de proximité
-	captor_proximity_t captProx = ULTRASONIC_TRIG;
-	pinMode (captProx, OUTPUT);
-	captProx= ULTRASONIC_ECHO;
-	pinMode(captProx,INPUT);
+	pinMode (ULTRASONIC_TRIG, OUTPUT);
+	pinMode(ULTRASONIC_ECHO,INPUT);
 	
 
 }
@@ -87,10 +72,55 @@ void init_wiringpi(){
  * \param button le bouton a tester
  */
 int is_button_pressed(buttons_keymap_t button){
-	int level = digitalRead(button);
-	return (level==HIGH);
-}
 
+	if(button>=90)
+		return is_button_pressed_matrix(button);
+	else{	
+		int level = digitalRead(button);
+		return (level==HIGH);
+	}
+}
+/**
+ * \fn is_button_pressed(buttons_keymap_t button);
+ * \brief tester si le bouton est pressé dans la matrice
+ * \param button le bouton a tester
+ */
+int is_button_pressed_matrix(buttons_keymap_t button){
+	int level=0;
+	switch(button)
+	{
+		case BUTTON_CH1NSAVE:
+			digitalWrite(BUTTON_COL3,HIGH);
+			level = is_button_pressed(BUTTON_ROW1);
+			digitalWrite(BUTTON_COL3,LOW);
+			
+		break;
+		case BUTTON_CH2NQUIT:
+			digitalWrite(BUTTON_COL3,HIGH);
+			level = is_button_pressed(BUTTON_ROW2);
+			digitalWrite(BUTTON_COL3,LOW);
+			
+		break;
+		case BUTTON_CH3NPlay :
+			digitalWrite(BUTTON_COL4,HIGH);
+			level = is_button_pressed(BUTTON_ROW1);
+			digitalWrite(BUTTON_COL4,LOW);
+			
+		break;
+		case BUTTON_CHANGEMODE:
+			digitalWrite(BUTTON_COL4,HIGH);
+			level = is_button_pressed(BUTTON_ROW2);
+			digitalWrite(BUTTON_COL4,LOW);
+			
+		break;
+		
+		default:
+			printf("Le bouton %d n'existe pas !",button); 
+			
+	}
+	return level;
+
+}
 /**
  * \fn  sm_play_note(stepper_motor_pins_t step);
  * \brief jouer une note sur le step motor
@@ -155,6 +185,7 @@ int read_proximity_captor(){
 	//on envoie un pwm 
 	captor_proximity_t captProx = ULTRASONIC_TRIG;
 	pwmWrite(captProx,660); // rapport cyclique conseillé  : 0.67 environ
+	pwmWrite(captProx,0);
 	
 	//on lit la valeur en retour
 	captProx = ULTRASONIC_ECHO;

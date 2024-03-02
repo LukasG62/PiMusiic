@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <wiringPiSPI.h>
 #include <wiringPiI2C.h>
+#include <stdio.h>
 /* ------------------------------------------------------------------------ */
 /*              C O N S T A N T E S     S Y M B O L I Q U E S               */
 /* ------------------------------------------------------------------------ */
@@ -28,7 +29,7 @@
  *
  */
 typedef enum {
-	BUTTON_CHANGEMODE = 0, /*!< Valeur WP_Pin pour le bouton de changement de mode  */ //TODO trouver la bonne valeur 
+	
 	BUTTON_UP=37,/*!<Valeur WP_Pin pour la flèche directionnelle haut */ //TODO trouver la bonne valeur 
 	BUTTON_DOWN = 1,/*!< Valeur WP_Pin pour la flèche directionnelle bas*/ //TODO trouver la bonne valeur 
 	BUTTON_LEFT =15, /*!< Valeur WP_Pin pour la flèche directionnelle gauche*/
@@ -36,6 +37,11 @@ typedef enum {
 	BUTTON_CH1NSAVE = 90,/*!< Valeur button pour CH1 ou pour sauvegarder*/
 	BUTTON_CH2NQUIT = 91,/*!< Valeur button pour CH2 ou pour quitter*/
 	BUTTON_CH3NPlay = 92,/*!< Valeur button pour CH3 ou pour jouer*/
+	BUTTON_CHANGEMODE = 93, /*!< Valeur WP_Pin pour le bouton de changement de mode  */
+	BUTTON_ROW1 = 13,/*!< Valeur pin de la ligne 1 de la matrice de bouton*/
+	BUTTON_ROW2 = 15,/*!< Valeur pin de la ligne 2 de la matrice de bouton*/
+	BUTTON_COL3 = 37,/*!< Valeur pin de la colonne 3 de la matrice de bouton*/
+	BUTTON_COL4 = 22,/*!< Valeur pin de la colonne 4 de la matrice de bouton*/
 }buttons_keymap_t;
 
 
