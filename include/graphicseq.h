@@ -13,6 +13,7 @@
 #define RPI_COLS 106 /*!< Nombre de colonnes de la fenêtre sur le RPI */
 #define RPI_LINES 30 /*!< Nombre de lignes de la fenêtre sur le RPI */
 
+#define REVERSE_IF_COL(col, navcol, isSelected) (((col) == (navcol)) && (isSelected) ? A_REVERSE : 0) /*!< Inversion de la couleur si la colonne est sélectionnée */
 // X : Colonne Y : Ligne
 
 // Constantes pour le l'entête d'information du séquenceur
@@ -27,16 +28,16 @@
 #define SEQUENCER_HELP_COLS 53 /*!< Hauteur de l'entête d'aide */
 // Constantes pour le body du séquenceur
 #define SEQUENCER_BODY_X0 0 /*!< Position X du body */
-#define SEQUENCER_BODY_Y0 7 /*!< Position Y du body */
-#define SEQUENCER_BODY_LINES 23 /*!< Largeur du body */
+#define SEQUENCER_BODY_Y0 6 /*!< Position Y du body */
+#define SEQUENCER_BODY_LINES 24 /*!< Largeur du body */
 #define SEQUENCER_BODY_COLS 106 /*!< Hauteur du body */
 
 #define SEQUENCER_CH1_X0 7 /*!< Position X du channel 1 */
 #define SEQUENCER_CH2_X0 37 /*!< Position X du channel 2 */
 #define SEQUENCER_CH3_X0 67 /*!< Position X du channel 3 */
-#define SEQUENCER_CH1_Y0 8 /*!< Position Y du channel 1 */
-#define SEQUENCER_CH2_Y0 8 /*!< Position Y du channel 2 */
-#define SEQUENCER_CH3_Y0 8 /*!< Position Y du channel 3 */
+#define SEQUENCER_CH_Y0 7 /*!< Position Y du channel 1, 2 et 3 */
+#define SEQUENCER_CH_LINES 22 /*!< Largeur des channels */
+#define SEQUENCER_CH_COLS 26 /*!< Hauteur des channels */
 
 
 
@@ -87,6 +88,46 @@ typedef enum {
 typedef enum {
     COLOR_LIGHTGREY = 10, /*!< Gris clair */
 } custom_colors_t;
+
+/**
+ * \enum sequencer_nav_col_t
+ * \brief Enumération des colonnes du séquenceur
+ * \details Cette énumération permet de définir les colonnes du séquenceur
+*/
+typedef enum {
+    SEQUENCER_NAV_COL_LINE = 0, /*!< Ligne */
+    SEQUENCER_NAV_COL_NOTE, /*!< Colonne de note */
+    SEQUENCER_NAV_COL_INSTRUMENT, /*!< Colonne d'instrument */
+    SEQUENCER_NAV_COL_TIME, /*!< Colonne de temps */
+    SEQUENCER_NAV_COL_OCTAVE, /*!< Colonne d'octave */
+    SEQUENCER_NAV_COL_PLAYED, /*!< Colonne jouée */
+    SEQUENCER_NAV_COL_MAX, /*!< Nombre de colonnes */
+} sequencer_nav_col_t;
+
+/**
+ * \enum sequencer_nav_ch_t
+ * \brief Enumération des channels du séquenceur
+ * \details Cette énumération permet de définir les channels du séquenceur
+*/
+typedef enum {
+    SEQUENCER_NAV_CH1 = 0, /*!< Channel 1 */
+    SEQUENCER_NAV_CH2, /*!< Channel 2 */
+    SEQUENCER_NAV_CH3, /*!< Channel 3 */
+    SEQUENCER_NAV_CH_MAX, /*!< Nombre de channels */
+} sequencer_nav_ch_t;
+
+/**
+ * \struct sequencer_nav_t
+ * \brief Structure de navigation dans le séquenceur
+ * \details Cette structure permet de définir la position de navigation dans le séquenceur
+ * 
+*/
+typedef struct {
+    sequencer_nav_col_t col; /*!< Colonne */
+    sequencer_nav_ch_t ch; /*!< Channel */
+    int start[SEQUENCER_NAV_COL_MAX]; /*!< Position de départ [col] */
+    int line; /*!< Ligne */
+} sequencer_nav_t;
 
 /**
  * \fn void init_ncurses()
@@ -146,5 +187,14 @@ choices_t show_create_music_menu(music_t *music, int connected);
  * \see music_t
  */
 choices_t show_sequencer(music_t *music, int connected);
+
+/**
+ * \fn void create_sequencer_nav()
+ * \brief Création de la structure de navigation dans le séquenceur
+ * \return La structure de navigation
+*/
+sequencer_nav_t create_sequencer_nav();
+
+
 
 #endif
