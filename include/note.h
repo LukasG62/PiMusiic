@@ -65,7 +65,7 @@ typedef enum {
 
 
 /**
- * \enum time_t
+ * \enum time_duration_t
  * \brief Enumeration des durées des notes
  */
 typedef enum {
@@ -86,8 +86,8 @@ typedef struct {
 	char note[3];/*!<  Nom de la note*/
 	double frequency; /*!< Fréquence en Hz à l’octave de référence*/
 	short octave;/*!< octave de la note*/
-	instrument_t instrument; /*!< Istrument sur lequel la jouer*/
-	time_t time;/*!<  Durée de la note */
+	instrument_t instrument; /*!< Instrument sur lequel la jouer*/
+	time_duration_t time;/*!<  Durée de la note */
 }note_t;
 
 /**
