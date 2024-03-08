@@ -1,13 +1,13 @@
 ## Variables
 
 # Default Raspberry Pi IP address
-IP_RPI?=192.168.0.44
+IP_RPI?=192.168.42.131
 # Path to cross-compiler binaries
 PATH_CC_BINS?=/home/lukas/LE3/OCC/tools-master/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin
 # Default target fake root directory
 TARGET_FAKEROOT_RPI?=/home/lukas/LE3/OCC/fakeroot 
 # Compiler command
-CCC?=$(PATH_CC)/arm-linux-gnueabihf-gcc-4.8.3
+CCC?=$(PATH_CC_BINS)/arm-linux-gnueabihf-gcc-4.8.3
 # Programs to build
 PROG=pimusiic pi2iserv
 # Path to rpi binaries
