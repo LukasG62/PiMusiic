@@ -95,7 +95,6 @@ void print_sequencer_note(WINDOW *win, note_t note, short ch, int line, sequence
 /**
  * \fn void print_sequencer_lines(WINDOW *win, short channelId, music_t *music, sequencer_nav_t *seqNav)
  * \brief Affichage des notes du séquenceur
- * \details Cette fonction affiche les notes du séquenceur
  * \param win La fenêtre où afficher les notes
  * \param channelId L'identifiant du channel
  * \param seqNav La structure de navigation dans le séquenceur
@@ -103,6 +102,17 @@ void print_sequencer_note(WINDOW *win, note_t note, short ch, int line, sequence
  * \see sequencer_nav_t
  */
 void print_sequencer_lines(WINDOW *win, short channelId, music_t *music, sequencer_nav_t *seqNav);
+
+/**
+ * \fn void change_sequencer_note(note_t *note, short col, scale_t scale, int isUp)
+ * \brief Modification d'une note du séquenceur en fonction de la colonne actuel et de la direction de la modification
+ * \param note La note à modifier
+ * \param col La colonne actuelle
+ * \param scale La gamme des notes
+ * \param isUp La direction de la modification (0 pour le bas, 1 pour le haut)
+ * \see scale_t
+*/
+void change_sequencer_note(note_t *note, short col, scale_t scale, int isUp);
 
 /**********************************************************************************************************************/
 /*                                           Public Fonction Definitions                                              */
@@ -290,31 +300,33 @@ choices_t show_sequencer(music_t *music, int connected) {
             case KEY_UP:
                 if(seqNav.col == SEQUENCER_NAV_COL_LINE) {
                     if (seqNav.line > 0) seqNav.line--;
-                    if (seqNav.line < seqNav.start[seqNav.ch]) seqNav.start[seqNav.ch]--; // On défile vers le haut
+                    if (seqNav.line < seqNav.start[seqNav.ch]) seqNav.start[seqNav.ch] = seqNav.start[seqNav.ch] - SEQUENCER_CH_LINES + 3; // On défile vers le haut
                 }
                 // Sinon modification de la note
                 else {
-                    note_t note = music->channels[seqNav.ch].notes[seqNav.col];
-                    // appel de la fonction change_note(note, col, scale_t scale, 1)
+                    note_t *note = &(music->channels[seqNav.ch].notes[seqNav.line]);
+                    change_sequencer_note(note, seqNav.col, scale, 1);
                 }
                 break;
             case KEY_DOWN:
                 if(seqNav.col == SEQUENCER_NAV_COL_LINE) {
-                    if (seqNav.line >= seqNav.start[seqNav.ch] + SEQUENCER_CH_LINES - 4) seqNav.start[seqNav.ch]++; // On défile vers le bas
+                    if (seqNav.line >= seqNav.start[seqNav.ch] + SEQUENCER_CH_LINES - 4) seqNav.start[seqNav.ch] = seqNav.start[seqNav.ch] + SEQUENCER_CH_LINES - 3; // On défile vers le bas
                     if (seqNav.line < CHANNEL_MAX_NOTES - 1) seqNav.line++;
                 }
                 // Sinon modification de la note
                 else {
-                    note_t note = music->channels[seqNav.ch].notes[seqNav.line];
-                    // appel de la fonction change_note(note, col, scale_t scale, 0)
+                    note_t *note = &(music->channels[seqNav.ch].notes[seqNav.line]);
+                    change_sequencer_note(note, seqNav.col, scale, 0);
                 }
                 break;
             case KEY_LEFT:
-                // Si on est sur la colonne LINE du CH0, on change de channel 
-                if (seqNav.col == SEQUENCER_NAV_COL_LINE && seqNav.ch == 0) {
-                    // comme ça on change de channel mais on garde la ligne à la même position
-                    seqNav.start[SEQUENCER_NAV_CH_MAX - 1] = seqNav.start[seqNav.ch];
-                    seqNav.ch=SEQUENCER_NAV_CH_MAX - 1;
+                // Si on est sur la colonne de la ligne on change de channel 
+                if (seqNav.col == SEQUENCER_NAV_COL_LINE) {
+                    // on change de channel
+                    int newChannel = (seqNav.ch - 1) != -1 ? seqNav.ch-1 : SEQUENCER_NAV_CH_MAX - 1;
+                    seqNav.start[newChannel] = seqNav.start[seqNav.ch]; // on switch de channel mais on garde la ligne à la même position
+                    seqNav.ch = newChannel;
+                    seqNav.col = SEQUENCER_NAV_COL_TIME; // on revient à la colonne de la durée
                     break;
                 }
                 // Sinon on change de colonne
@@ -322,13 +334,23 @@ choices_t show_sequencer(music_t *music, int connected) {
 
                 break;
             case KEY_RIGHT:
+                // Si on est sur la colonne de la durée on change de channel
+                if (seqNav.col == SEQUENCER_NAV_COL_TIME) {
+                    // on change de channel
+                    int newChannel = (seqNav.ch + 1) % SEQUENCER_NAV_CH_MAX;
+                    seqNav.start[newChannel] = seqNav.start[seqNav.ch]; // on switch de channel mais on garde la ligne à la même position
+                    seqNav.ch = newChannel;
+                    seqNav.col = SEQUENCER_NAV_COL_LINE; // on revient à la colonne de la ligne
+                    break;
+                }
                 if (seqNav.col < SEQUENCER_NAV_COL_MAX - 1) seqNav.col++;
                 break;
         }
         // On rafraichit les fenêtres
         show_sequencer_info(seqInfo, music, 0);
-        // On rafraichit seulement le channel actuel
-        print_sequencer_lines(channelWin[seqNav.ch], seqNav.ch, music, &seqNav);
+        print_sequencer_lines(channelWin[0], 0, music, &seqNav);
+        print_sequencer_lines(channelWin[1], 1, music, &seqNav);
+        print_sequencer_lines(channelWin[2], 2, music, &seqNav);
         mvwprintw(seqBody, 0, 1, "%d, %d, %d %d", seqNav.start[0], seqNav.start[1], seqNav.start[2], seqNav.line);
 
     }
@@ -343,7 +365,8 @@ sequencer_nav_t create_sequencer_nav() {
     sequencer_nav_t nav;
     nav.col = SEQUENCER_NAV_COL_LINE;
     nav.ch = SEQUENCER_NAV_CH1;
-    for (int i = 0; i < SEQUENCER_NAV_COL_MAX; i++) nav.start[i] = 0;
+    int i;
+    for (i = 0; i < SEQUENCER_NAV_COL_MAX; i++) nav.start[i] = 0;
     nav.line = 0;
     return nav;
 }
@@ -530,11 +553,12 @@ void init_menu(const char *title, const char *text, int centered) {
 choices_t create_menu(const char *title, const char *text, char **choices, int nbChoices, int highlight, choices_t *choices_return) {
     clear(); // on nettoie l'écran
     int c; // la touche pressée
+    int i;
     int curr = highlight; // le choix actuel
     init_menu(title, text, 0); // Initialisation du menu
 
     // On affiche les choix
-    for (int i = 0; i < nbChoices; i++) {
+    for (i = 0; i < nbChoices; i++) {
         if (i == curr) {
             attron(A_REVERSE);
             mvprintw(5 + i, 8, "%s", choices[i]);
@@ -559,7 +583,7 @@ choices_t create_menu(const char *title, const char *text, char **choices, int n
                 return choices_return[curr];
             break;
         }
-        for (int i = 0; i < nbChoices; i++) {
+        for (i = 0; i < nbChoices; i++) {
             if (i == curr) attron(A_REVERSE);
             mvprintw(5 + i, 8, "%s", choices[i]);
             attroff(A_REVERSE);
@@ -581,7 +605,8 @@ choices_t create_menu(const char *title, const char *text, char **choices, int n
  */
 void print_sequencer_lines(WINDOW *win, short channelId, music_t *music, sequencer_nav_t *seqNav) {
     // On affiche les informations
-    for(int i = 0; i < SEQUENCER_CH_LINES - 3; i++) {
+    int i;
+    for(i = 0; i < SEQUENCER_CH_LINES - 3; i++) {
         note_t note = music->channels[channelId].notes[seqNav->start[channelId] + i];
         int isSelected = 0;
         if(seqNav->ch == channelId && seqNav->line == seqNav->start[channelId]+i) isSelected = 1;
@@ -604,6 +629,10 @@ void print_sequencer_lines(WINDOW *win, short channelId, music_t *music, sequenc
 void print_sequencer_note(WINDOW *win, note_t note, short ch, int line, sequencer_nav_t *seqNav, int isSelected) {
     //TODO : Rajouter position du curseur pour reverse la colonne sélectionnée sur la ligne
     //TODO : Rajouter si la ligne est jouée alors toute la ligne est inversée
+    char instrumentName[5]; // Nom de l'instrument
+    char noteName[3]; // Nom de la note
+    note2str(note, noteName); // On récupère le nom de la note
+    instrument2str(note.instrument, instrumentName); // On récupère le nom de l'instrument
     wattron(win, COLOR_PAIR(COLOR_PAIR_SEQ) | REVERSE_IF_COL(seqNav->col, SEQUENCER_NAV_COL_LINE, isSelected));
         mvwprintw(win, 2+line, 1, "%04X", seqNav->start[ch] + line);
     wattroff(win, COLOR_PAIR(COLOR_PAIR_SEQ) | A_REVERSE);
@@ -613,7 +642,7 @@ void print_sequencer_note(WINDOW *win, note_t note, short ch, int line, sequence
     wattroff(win, COLOR_PAIR(COLOR_PAIR_SEQ) | A_REVERSE);
     
     wattron(win, COLOR_PAIR(COLOR_PAIR_SEQ_NOTE) | REVERSE_IF_COL(seqNav->col, SEQUENCER_NAV_COL_NOTE, isSelected));
-    mvwprintw(win, 2+line, 6, " %2s ", note.note);
+    mvwprintw(win, 2+line, 6, " %-2s ", noteName);
     wattroff(win, COLOR_PAIR(COLOR_PAIR_SEQ_NOTE) | A_REVERSE);
     
     wattron(win, COLOR_PAIR(COLOR_PAIR_SEQ));
@@ -629,7 +658,7 @@ void print_sequencer_note(WINDOW *win, note_t note, short ch, int line, sequence
     wattroff(win, COLOR_PAIR(COLOR_PAIR_SEQ));
     
     wattron(win, COLOR_PAIR(COLOR_PAIR_SEQ_INSTRUMENT) | REVERSE_IF_COL(seqNav->col, SEQUENCER_NAV_COL_INSTRUMENT, isSelected));
-    mvwprintw(win, 2+line, 16, " %02d ", note.instrument);
+    mvwprintw(win, 2+line, 16, "%s ", instrumentName);
     wattroff(win, COLOR_PAIR(COLOR_PAIR_SEQ_INSTRUMENT) |A_REVERSE);
     
     wattron(win, COLOR_PAIR(COLOR_PAIR_SEQ));
@@ -639,4 +668,46 @@ void print_sequencer_note(WINDOW *win, note_t note, short ch, int line, sequence
     wattron(win, COLOR_PAIR(COLOR_PAIR_SEQ_SHIFT) | REVERSE_IF_COL(seqNav->col, SEQUENCER_NAV_COL_TIME, isSelected));
     mvwprintw(win, 2+line, 21, " %02d ", note.time);
     wattroff(win, COLOR_PAIR(COLOR_PAIR_SEQ_SHIFT) | A_REVERSE);
+}
+
+/**
+ * \fn void change_sequencer_note(note_t *note, short col, scale_t scale, int isUp)
+ * \brief Modification d'une note du séquenceur en fonction de la colonne actuel et de la direction de la modification
+ * \param note La note à modifier
+ * \param col La colonne actuelle
+ * \param scale La gamme des notes
+ * \param isUp La direction de la modification (0 pour le bas, 1 pour le haut)
+ * \see scale_t
+*/
+void change_sequencer_note(note_t *note, short col, scale_t scale, int isUp) {
+    switch(col) {
+        case SEQUENCER_NAV_COL_NOTE:
+            if (isUp) {
+                get_next_note(note, &scale);
+                // on assigne un instrument par défaut si l'utilisateur n'a pas choisi
+                if (note->instrument == INSTRUMENT_NA) note->instrument = INSTRUMENT_SIN;
+            }
+            else { 
+                get_previous_note(note, &scale);
+            }
+            break;
+        case SEQUENCER_NAV_COL_OCTAVE:
+            if (isUp) note->octave = note->octave + 1 > 8 ? 8 : note->octave + 1;
+            else note->octave = note->octave - 1 < 0 ? 8 : note->octave - 1;
+            break;
+        case SEQUENCER_NAV_COL_INSTRUMENT:
+            if (isUp) note->instrument = note->instrument + 1 == INSTRUMENT_NB ? 0 : note->instrument + 1;
+            else note->instrument = (note->instrument - 1) == -1 ? INSTRUMENT_NB - 1 : note->instrument - 1;
+            break;
+        case SEQUENCER_NAV_COL_TIME:
+            if (isUp) {
+                note->time += ( (note->time == TIME_CROCHE_DOUBLE) ? 1 : 2);
+                if (note->time >= TIME_END) note->time = TIME_CROCHE_DOUBLE;
+            }
+            else {
+                note->time -=(note->time == TIME_CROCHE ? 1 : 2);
+                if (note->time == -1) note->time = TIME_RONDE;
+            }
+            break;
+    }
 }

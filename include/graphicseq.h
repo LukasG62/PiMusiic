@@ -11,7 +11,7 @@
 #include "note.h"
 
 #define RPI_COLS 106 /*!< Nombre de colonnes de la fenêtre sur le RPI */
-#define RPI_LINES 30 /*!< Nombre de lignes de la fenêtre sur le RPI */
+#define RPI_LINES 29 /*!< Nombre de lignes de la fenêtre sur le RPI */
 
 #define REVERSE_IF_COL(col, navcol, isSelected) (((col) == (navcol)) && (isSelected) ? A_REVERSE : 0) /*!< Inversion de la couleur si la colonne est sélectionnée */
 // X : Colonne Y : Ligne
@@ -97,10 +97,9 @@ typedef enum {
 typedef enum {
     SEQUENCER_NAV_COL_LINE = 0, /*!< Ligne */
     SEQUENCER_NAV_COL_NOTE, /*!< Colonne de note */
+    SEQUENCER_NAV_COL_OCTAVE, /*!< Colonne d'octave */
     SEQUENCER_NAV_COL_INSTRUMENT, /*!< Colonne d'instrument */
     SEQUENCER_NAV_COL_TIME, /*!< Colonne de temps */
-    SEQUENCER_NAV_COL_OCTAVE, /*!< Colonne d'octave */
-    SEQUENCER_NAV_COL_PLAYED, /*!< Colonne jouée */
     SEQUENCER_NAV_COL_MAX, /*!< Nombre de colonnes */
 } sequencer_nav_col_t;
 

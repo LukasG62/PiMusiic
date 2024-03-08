@@ -16,6 +16,7 @@
 #define MUSIC_MAX_CHANNELS 3 /*!< Nombre de channels maximum dans une musique */
 
 //Fréquences des notes
+#define REF_OCTAVE 4 /*!< Octave de référence */
 #define NOTE_C_FQ 261.63 /*!< Fréquence du DO à l’octave de référence */
 #define NOTE_CS_FQ 277.18 /*!< Fréquence du DO# à l’octave de référence */
 #define NOTE_D_FQ 293.66 /*!< Fréquence du RÉ à l’octave de référence */
@@ -31,20 +32,28 @@
 #define NOTE_NA_FQ 0 /*!< Fréquence d’une non note */
 
 //Noms des notes
-#define NOTE_C_NAME "C" /*!< Nom du DO à l’octave de référence */
+#define NOTE_C_NAME "C-" /*!< Nom du DO à l’octave de référence */
 #define NOTE_CS_NAME "C#"/*!< Nom du DO# à l’octave de référence */
-#define NOTE_D_NAME "D"/*!< Nom du RÉ à l’octave de référence */
+#define NOTE_D_NAME "D-"/*!< Nom du RÉ à l’octave de référence */
 #define NOTE_DS_NAME "D#"/*!< Nom du RÉ# à l’octave de référence */
-#define NOTE_E_NAME "E"/*!< Nom du MI à l’octave de référence */
-#define NOTE_F_NAME "F"/*!< Nom du FA à l’octave de référence */
+#define NOTE_E_NAME "E-"/*!< Nom du MI à l’octave de référence */
+#define NOTE_F_NAME "F-"/*!< Nom du FA à l’octave de référence */
 #define NOTE_FS_NAME "F#"/*!< Nom du FA# à l’octave de référence */
-#define NOTE_G_NAME "G"/*!< Nom du SOL à l’octave de référence */
+#define NOTE_G_NAME "G-"/*!< Nom du SOL à l’octave de référence */
 #define NOTE_GS_NAME "G#"/*!< Nom du SOL# à l’octave de référence */
-#define NOTE_A_NAME "A"/*!< Nom du LA à l’octave de référence */
+#define NOTE_A_NAME "A-"/*!< Nom du LA à l’octave de référence */
 #define NOTE_AS_NAME "A#"/*!< Nom du LA# à l’octave de référence */
-#define NOTE_B_NAME "B"/*!< Nom du SI à l’octave de référence */
+#define NOTE_B_NAME "B-"/*!< Nom du SI à l’octave de référence */
 #define NOTE_NA_NAME "--"/*!< Nom d'une non note */
 #define NB_NOTES 13 /*!< Nombre de notes dans une octave en incluant la non note */
+
+// Nom des instruments
+#define INSTRUMENT_STEPMOTOR_NAME "STEP" /*!< Nom de l'instrument moteur pas à pas */
+#define INSTRUMENT_SIN_NAME "SIN " /*!< Nom de l'instrument signal sinusoïdale */
+#define INSTRUMENT_SAWTOOTH_NAME "SAW " /*!< Nom de l'instrument signal en dent de scie */
+#define INSTRUMENT_TRIANGLE_NAME "TRI " /*!< Nom de l'instrument signal en triangle */
+#define INSTRUMENT_SQUARE_NAME "SQR " /*!< Nom de l'instrument signal carré */
+#define INSTRUMENT_NA_NAME " -- " /*!< Nom de l'instrument non disponible */
 
 /* ------------------------------------------------------------------------ */
 /*              D É F I N I T I O N S   D E   T Y P E S                     */
@@ -56,11 +65,13 @@
  *
  */
 typedef enum {
-	INSTRUMENT_STEPMOTOR = 0, /*!< Utilisation du moteur pas à pas */
+	INSTRUMENT_NA=0, /*!< Pas d’instrument*/
+	INSTRUMENT_STEPMOTOR, /*!< Utilisation du moteur pas à pas */
 	INSTRUMENT_SIN,/*!< Utilisation d’un signal sinusoïdale */
 	INSTRUMENT_SAWTOOTH,/*!< Utilisation d’un signal en dent de scie*/
 	INSTRUMENT_TRIANGLE, /*!< Utilisation d’un signal en triangle*/
-	INSTRUMENT_NA /*!< Pas d’instrument*/
+	INSTRUMENT_SQUARE, /*!< Utilisation d’un signal carré*/
+	INSTRUMENT_NB /*!< Nombre d’instruments disponibles*/
 }instrument_t;
 
 
@@ -75,6 +86,7 @@ typedef enum {
 	TIME_NOIRE = 4,/*!< Valeur par défaut, elle vaut 1 temps*/
 	TIME_BLANCHE = 6,/*!< elle vaut 2 temps*/
 	TIME_RONDE = 8,/*!< elle vaut 4 temps*/
+	TIME_END = 10 /*!< Valeur de fin de la liste*/
 
 }time_duration_t;
 
@@ -83,7 +95,7 @@ typedef enum {
  * \brief Structure des notes
  */
 typedef struct {
-	char note[3];/*!<  Nom de la note*/
+	short id; /*!< Identifiant de la note (position dans la gamme)*/
 	double frequency; /*!< Fréquence en Hz à l’octave de référence*/
 	short octave;/*!< octave de la note*/
 	instrument_t instrument; /*!< Instrument sur lequel la jouer*/
@@ -95,9 +107,7 @@ typedef struct {
  * \brief Structure representant une gamme
 */
 typedef struct {
-	char list_scale[NB_NOTES][3];/*!< Liste des notes de la gamme*/
-	short nbNotes;/*!< Nombre de note dans la gamme*/
-	short current; /*!< position dans la gamme*/
+	double freqScale[NB_NOTES];/*!< Fréquence en Hz à l’octave de référence*/
 }scale_t;
 
 
@@ -126,27 +136,27 @@ typedef struct {
 /*            P R O T O T Y P E S    D E    F O N C T I O N S               */
 /* ------------------------------------------------------------------------ */
 /**
- * \fn note_t create_note(char[3] note, double frequency, short octave,instrument_t instrument, time_t time);
+ * \fn note_t create_note(short id, double frequency, short octave,instrument_t instrument, time_t time);
  * \brief Créé une note avec les param donnés
- * \param note Nom de la note
+ * \param id identifiant de la note
  * \param frequency Fréquence en Hz à l’octave de référence
  * \param octave octave de la note
  * \param instrument Istrument sur lequel la jouer
  * \param time Durée de la note
  */
-note_t create_note(char note[3], double frequency, short octave,instrument_t instrument, time_duration_t time);
+note_t create_note(short id, double frequency, short octave,instrument_t instrument, time_duration_t time);
 
 /**
  * \fn note_t *mod_note(note_t *noteModif,char note[3], double frequency, short octave,instrument_t instrument, time_duration_t time);
  * \brief modifie la note avec les param donnés
  * \param noteModif note à modifier
- * \param note Nom de la note
+ * \param id identifiant de la note
  * \param frequency Fréquence en Hz à l’octave de référence
  * \param octave octave de la note
  * \param instrument Istrument sur lequel la jouer
  * \param time Durée de la note
  */
-note_t *mod_note(note_t *noteModif,char note[3], double frequency, short octave,instrument_t instrument, time_duration_t time);
+note_t *mod_note(note_t *noteModif, short id, double frequency, short octave,instrument_t instrument, time_duration_t time);
 
 
 /**
@@ -158,20 +168,29 @@ note_t *mod_note(note_t *noteModif,char note[3], double frequency, short octave,
 scale_t init_scale();
 
 /**
- * \fn char* get_next_note(scale_t *scale);
+ * \fn char* get_next_note(note_t *note, scale_t *scale);
  * \brief récupérer la note suivante
  * \param scale la gamme
+ * \param note note de référence
  * \return la note suivante
  * \note Elle met à jour la position dans la gamme
  */
-char *get_next_note(scale_t *scale);
+char *get_next_note(note_t *note, scale_t *scale);
 
 /**
- * \fn char* get_previous_note(scale_t *scale);
+ * \fn char* get_previous_note(note_t *note, scale_t *scale);
  * \brief récupérer la note précédente avec les paramètres donnés
  * \param note note de référence 
  */
-char *get_previous_note(scale_t *scale);
+char *get_previous_note(note_t *note, scale_t *scale);
+
+/**
+ * \fn void get_note_freq(note_t *note, scale_t *scale);
+ * \brief récupérer la fréquence de la note pointée par la position courante
+ * \param scale la gamme
+ * \return la fréquence de la note pointée par la position courante
+ */ 
+double get_note_freq(note_t *note, scale_t *scale);
 
 /**
  * \fn note_t *cp_note(note_t *dest, note_t src);
@@ -198,5 +217,19 @@ void init_channel(channel_t *channel, int id);
 */
 void init_music(music_t *music, short bpm);
 
+/**
+ * \fn void instrument2str(instrument_t instrument, char *str);
+ * \brief Convertir un instrument en chaine de caractère
+ * \param instrument l'instrument à convertir
+ * \param str la chaine de caractère qui va contenir le nom de l'instrument
+ */
+void instrument2str(instrument_t instrument, char *str);
+
+/**
+ * \fn note2str(note_t note, char *str);
+ * \brief Convertir une note en chaine de caractère
+ * \param note la note à convertir
+*/
+void note2str(note_t note, char *str);
 
 #endif
