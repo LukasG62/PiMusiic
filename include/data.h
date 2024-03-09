@@ -18,7 +18,7 @@
 
 
 // Creation des types de données
-#define MAX_BUFF 1024
+#define MAX_BUFF 4096
 
 typedef char buffer_t[MAX_BUFF];
 typedef void* generic_t;
