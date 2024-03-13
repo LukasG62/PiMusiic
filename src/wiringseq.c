@@ -3,15 +3,6 @@
 /* ------------------------------------------------------------------------ */
 #include "wiringseq.h"
 /* ------------------------------------------------------------------------ */
-/*            P R O T O T Y P E S    D E    F O N C T I O N S               */
-/* ------------------------------------------------------------------------ */
-/**
- * \fn is_button_pressed(buttons_keymap_t button);
- * \brief tester si le bouton est pressé dans la matrice
- * \param button le bouton a tester
- */
-int is_button_pressed_matrix(buttons_keymap_t button);
-/* ------------------------------------------------------------------------ */
 /*                  C O D E    D E S    F O N C T I O N S                   */
 /* ------------------------------------------------------------------------ */
 
@@ -21,47 +12,37 @@ int is_button_pressed_matrix(buttons_keymap_t button);
  * \param
  */
 void init_wiringpi(){
+	
 	wiringPiSetup();
 	
-	//on initialise le SPI ( channel , frequency ) 
-	wiringPiSPISetup (RFID_CS, 13560000);
+	//on configure le capteur de proximité
+	pinMode (ULTRASONIC_TRIG, OUTPUT);
+	pinMode(ULTRASONIC_ECHO,INPUT);
 	
-	//on initialise I2C ( nb de device ) 
-	 wiringPiI2CSetup (1) ;
-	 
-	//on configure les boutons
-	
-	pinMode (BUTTON_UP, INPUT);
-	pinMode (BUTTON_DOWN, INPUT);
-	pinMode (BUTTON_LEFT, INPUT);
-	pinMode (BUTTON_RIGHT, INPUT);
-	pinMode (BUTTON_COL4, OUTPUT);
-	pinMode (BUTTON_COL3, OUTPUT);
-	pinMode (BUTTON_ROW2, INPUT);
-	pinMode (BUTTON_ROW1, INPUT);
+	int i;
+	int button_row[] = BUTTON_ROW;
 	
 	
-	//on configure les step du SM
-	pinMode (SM_STEP1, OUTPUT);
-	pinMode (SM_STEP2, OUTPUT);
-	pinMode (SM_STEP3, OUTPUT);
-	pinMode (SM_STEP4, OUTPUT);
+	for(i=0;i<4;i++){
+		pinMode(button_row[i],INPUT);
+		pullUpDnControl (button_row[i], PUD_UP) ;
+	}
 	
 	
-	//on configure le 7 segment_t
-	pinMode (SEVEN_SEGMENT_SDA, OUTPUT);
-	pinMode (SEVEN_SEGMENT_SCL, GPIO_CLOCK);
+	int button_col[] = BUTTON_COL;
+	for(i=0;i<3;i++){
+		pinMode(button_col[i],OUTPUT);
+		digitalWrite(button_col[i],HIGH);
+	}
 	
-	
+	/*
 	//on configure le rfid
 	pinMode (RFID_MOSI, OUTPUT);
 	pinMode(RFID_MISO,INPUT);
 	pinMode(RFID_SCLK,GPIO_CLOCK);
 	pinMode( RFID_CS,OUTPUT);
+	*/
 	
-	//on configure le capteur de proximité
-	pinMode (ULTRASONIC_TRIG, OUTPUT);
-	pinMode(ULTRASONIC_ECHO,INPUT);
 	
 
 }
@@ -71,90 +52,64 @@ void init_wiringpi(){
  * \brief tester si le bouton est pressé
  * \param button le bouton a tester
  */
-int is_button_pressed(buttons_keymap_t button){
-
-	if(button>=90)
-		return is_button_pressed_matrix(button);
-	else{	
-		int level = digitalRead(button);
-		return (level==HIGH);
+unsigned char is_button_pressed(){
+	unsigned char bitmap = 0;
+	int level;
+	
+	//col2
+	digitalWrite(BUTTON_COL2, LOW);
+	//button left
+	level=!digitalRead(BUTTON_ROW2);
+	if(level == HIGH){
+		bitmap = bitmap | BUTTON_LEFT;
 	}
-}
-/**
- * \fn is_button_pressed(buttons_keymap_t button);
- * \brief tester si le bouton est pressé dans la matrice
- * \param button le bouton a tester
- */
-int is_button_pressed_matrix(buttons_keymap_t button){
-	int level=0;
-	switch(button)
-	{
-		case BUTTON_CH1NSAVE:
-			digitalWrite(BUTTON_COL3,HIGH);
-			level = is_button_pressed(BUTTON_ROW1);
-			digitalWrite(BUTTON_COL3,LOW);
-			
-		break;
-		case BUTTON_CH2NQUIT:
-			digitalWrite(BUTTON_COL3,HIGH);
-			level = is_button_pressed(BUTTON_ROW2);
-			digitalWrite(BUTTON_COL3,LOW);
-			
-		break;
-		case BUTTON_CH3NPlay :
-			digitalWrite(BUTTON_COL4,HIGH);
-			level = is_button_pressed(BUTTON_ROW1);
-			digitalWrite(BUTTON_COL4,LOW);
-			
-		break;
-		case BUTTON_CHANGEMODE:
-			digitalWrite(BUTTON_COL4,HIGH);
-			level = is_button_pressed(BUTTON_ROW2);
-			digitalWrite(BUTTON_COL4,LOW);
-			
-		break;
-		
-		default:
-			printf("Le bouton %d n'existe pas !",button); 
-			
+	//button play
+	level=!digitalRead(BUTTON_ROW4);
+	if(level == HIGH){
+		bitmap = bitmap | BUTTON_CH3NPLAY;
 	}
-	return level;
-
-}
-/**
- * \fn  sm_play_note(stepper_motor_pins_t step);
- * \brief jouer une note sur le step motor
- * \param delay delai pour changer de pas ( faire x 4 pour un tour )
- */
-void sm_play_note(int delay){
-	stepper_motor_pins_t in1 = SM_STEP1;
-	stepper_motor_pins_t in2 = SM_STEP2;
-	stepper_motor_pins_t in3 = SM_STEP3;
-	stepper_motor_pins_t in4 = SM_STEP4;
-
-	digitalWrite(in1, HIGH); 
-    digitalWrite(in2, LOW); 
-    digitalWrite(in3, LOW); 
-    digitalWrite(in4, HIGH);
-    sleep(delay);
-
-    digitalWrite(in1, HIGH); 
-    digitalWrite(in2, HIGH); 
-    digitalWrite(in3, LOW); 
-    digitalWrite(in4, LOW);
-    sleep(delay);
-
-    digitalWrite(in1, LOW); 
-    digitalWrite(in2, HIGH); 
-    digitalWrite(in3, HIGH); 
-    digitalWrite(in4, LOW);
-    sleep(delay);
-
-    digitalWrite(in1, LOW); 
-    digitalWrite(in2, LOW); 
-    digitalWrite(in3, HIGH); 
-    digitalWrite(in4, HIGH);
-    sleep(delay);
+	
+	digitalWrite(BUTTON_COL2,HIGH);
+	usleep(1);
+	//col3
+	digitalWrite(BUTTON_COL3, LOW);
+	//button up
+	level=!digitalRead(BUTTON_ROW1);
+	if(level == HIGH){
+		bitmap = bitmap | BUTTON_UP;
+	}
+	//button changemode
+	level=!digitalRead(BUTTON_ROW2);
+	if(level == HIGH){
+		bitmap = bitmap | BUTTON_CHANGEMODE;
+	}
+	//button down
+	level=!digitalRead(BUTTON_ROW3);
+	if(level == HIGH){
+		bitmap = bitmap | BUTTON_DOWN;
+	}
+	//button save
+	level=!digitalRead(BUTTON_ROW4);
+	if(level == HIGH){
+		bitmap = bitmap | BUTTON_CH1NSAVE;
+	}
+	digitalWrite(BUTTON_COL3,HIGH);
+	usleep(1);
+	//col4
+	digitalWrite(BUTTON_COL4,LOW);
+	//button right
+	level=!digitalRead(BUTTON_ROW2);
+	if(level == HIGH){
+		bitmap = bitmap | BUTTON_RIGHT;
+	}
+	//button quit
+	level=!digitalRead(BUTTON_ROW4);
+	if(level == HIGH){
+		bitmap = bitmap | BUTTON_CH2NQUIT;
+	}
+	digitalWrite(BUTTON_COL4,HIGH);
+	usleep(1);
+	return bitmap;
 }
 
 /**
@@ -163,9 +118,45 @@ void sm_play_note(int delay){
  * \param bpm chiffre à afficher
  */
 void display_bpm(int bpm){
-	int address = 0x70;
-	wiringPiI2CWrite(address,0);
-	wiringPiI2CWrite(address,bpm);
+	int digits [] = {0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F};
+
+	
+	//on initialise I2C
+	int fd = wiringPiI2CSetup (SEVEN_SEGMENT_ADDR) ;
+	
+
+	
+	//on allume l'horloge
+	wiringPiI2CWriteReg16(fd,0x2,0x01);
+	
+	//on configure int/row
+	wiringPiI2CWriteReg16(fd,0xA,0x00);
+	
+	//on allume l'écran 
+	wiringPiI2CWriteReg16(fd,0x8,0x01);
+	
+	//on configure l'intensité
+	wiringPiI2CWriteReg16(fd,0xE,0x01);
+	
+	
+	//on écrit 2 à l'adresse 0
+	wiringPiI2CWriteReg16(fd,0x0,(digits[bpm/1000]));//premier digit
+	bpm = bpm%1000;
+	
+	wiringPiI2CWriteReg16(fd,0x2,(digits[bpm/100]));//deuxième digit
+	bpm =bpm%100;
+	
+	//2points
+	wiringPiI2CWriteReg16(fd,0x4,0x00);
+	
+	wiringPiI2CWriteReg16(fd,0x6,(digits[bpm/10]));//troisème digit
+	bpm =bpm%10;
+	
+	wiringPiI2CWriteReg16(fd,0x8,(digits[bpm/1]));
+	
+	
+	
+	close(fd);
 }
 
 /**
@@ -173,23 +164,57 @@ void display_bpm(int bpm){
  * \brief lis la valeur du badge rfid
  */
 char * read_rfid(char * tagRfid){
- // aucune idée ? j'ai pas trouvé de fonction pour lire en SPI ?
+	
+	
+	//on configure le rfid
+	pinMode (RFID_MOSI, OUTPUT);
+	pinMode(RFID_MISO,INPUT);
+	//pinMode(RFID_SCLK,GPIO_CLOCK);
+	//pinMode( RFID_CS,OUTPUT);
+	
+	//on initialise le SPI ( channel , frequency ) 
+	//int fd = wiringPiSPISetup (RFID_CS, 13560000);
+	
+	//on met le champ CS à 1 
+	//digitalWrite(RFID_CS, HIGH);
+	 /*SPI_WRITE(((dev_cmd << 1) & 0x7e) | 0x80);
+  SPI_FLUSH();
+  SPI_READ(ret);*/
 }
 
 /**
  * \fn read_proximity_captor();
  * \brief  lis la distance mesurée par le capteur
+ * \return 1 si proche 0 sinon
  */
 int read_proximity_captor(){
 	
-	//on envoie un pwm 
-	captor_proximity_t captProx = ULTRASONIC_TRIG;
-	pwmWrite(captProx,660); // rapport cyclique conseillé  : 0.67 environ
-	pwmWrite(captProx,0);
+	struct timeval dateDebut;
+	struct timeval dateFin;
 	
-	//on lit la valeur en retour
-	captProx = ULTRASONIC_ECHO;
-	int distance = round(analogRead(captProx)*17165/1000000);
+	digitalWrite(ULTRASONIC_TRIG, LOW);
+	
+	digitalWrite(ULTRASONIC_TRIG, HIGH);
+	sleep(0.00001);
+	digitalWrite(ULTRASONIC_TRIG, LOW);
+	while(digitalRead(ULTRASONIC_ECHO)==LOW){
+		gettimeofday(&dateDebut, NULL);
+	}
+	while(digitalRead(ULTRASONIC_ECHO)==HIGH){
+		gettimeofday(&dateFin, NULL);
+	}
+	
+	
+	uint64_t delta_us = (dateFin.tv_sec - dateDebut.tv_sec) * 1000000 + (dateFin.tv_usec - dateDebut.tv_usec) / 1000;
+	
+
+	int distance = round(delta_us*17150*100.0)/100.0;
+
+	if( distance == 0 )
+		return 1;
+	else 
+		return 0;	
+	
 }
 
 
