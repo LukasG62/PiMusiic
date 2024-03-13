@@ -30,7 +30,7 @@ LIB_DIR=lib
 CPFLAGS =-I$(INCLUDE_DIR)
 # Linker flags
 LDFLAGS =-L$(TARGET_FAKEROOT_RPI)/lib
-LB_FLAG =-lncurses -lwiringPi
+LB_FLAG =-lncurses -lwiringPi -lpthread
 
 ## Rules
 .PHONY:all clean docs install
