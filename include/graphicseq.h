@@ -1,7 +1,7 @@
 /**
  * \file graphicseq.h
  * \details Couche d'abstraction de ncurses pour les élément graphiques du sequenceur
-*/
+ */
 
 #ifndef GRAPHIC_SEQ_H
 #define GRAPHIC_SEQ_H
@@ -9,83 +9,92 @@
 #include <ncurses.h>
 #include <string.h>
 #include "note.h"
+#include "wiringseq.h"
+#include "mpp.h"
 
 #define RPI_COLS 106 /*!< Nombre de colonnes de la fenêtre sur le RPI */
 #define RPI_LINES 29 /*!< Nombre de lignes de la fenêtre sur le RPI */
 
 #define REVERSE_IF_COL(col, navcol, isSelected) (((col) == (navcol)) && (isSelected) ? A_REVERSE : 0) /*!< Inversion de la couleur si la colonne est sélectionnée */
+#define REVERSE_IFNOT_PLAYMODE(playMode, isSelected) ((playMode && isSelected) ? 0 : A_REVERSE) /*!< Inversion de la couleur si le mode de lecture est activé */
 // X : Colonne Y : Ligne
 
 // Constantes pour le l'entête d'information du séquenceur
-#define SEQUENCER_INFO_X0 0 /*!< Position X de l'entête d'information */
-#define SEQUENCER_INFO_Y0 0 /*!< Position Y de l'entête d'information */
+#define SEQUENCER_INFO_X0 0    /*!< Position X de l'entête d'information */
+#define SEQUENCER_INFO_Y0 0    /*!< Position Y de l'entête d'information */
 #define SEQUENCER_INFO_LINES 6 /*!< Largeur de l'entête d'information */
-#define SEQUENCER_INFO_COLS 52 /*!< Hauteur de l'entête d'information */
+#define SEQUENCER_INFO_COLS 53 /*!< Hauteur de l'entête d'information */
 // Constantes pour le l'entête d'aide du séquenceur
-#define SEQUENCER_HELP_X0 53 /*!< Position X de l'entête d'aide */
-#define SEQUENCER_HELP_Y0 0 /*!< Position Y de l'entête d'aide */
+#define SEQUENCER_HELP_X0 53   /*!< Position X de l'entête d'aide */
+#define SEQUENCER_HELP_Y0 0    /*!< Position Y de l'entête d'aide */
 #define SEQUENCER_HELP_LINES 6 /*!< Largeur de l'entête d'aide */
 #define SEQUENCER_HELP_COLS 53 /*!< Hauteur de l'entête d'aide */
 // Constantes pour le body du séquenceur
-#define SEQUENCER_BODY_X0 0 /*!< Position X du body */
-#define SEQUENCER_BODY_Y0 6 /*!< Position Y du body */
+#define SEQUENCER_BODY_X0 0     /*!< Position X du body */
+#define SEQUENCER_BODY_Y0 6     /*!< Position Y du body */
 #define SEQUENCER_BODY_LINES 24 /*!< Largeur du body */
 #define SEQUENCER_BODY_COLS 106 /*!< Hauteur du body */
 
-#define SEQUENCER_CH1_X0 7 /*!< Position X du channel 1 */
-#define SEQUENCER_CH2_X0 37 /*!< Position X du channel 2 */
-#define SEQUENCER_CH3_X0 67 /*!< Position X du channel 3 */
-#define SEQUENCER_CH_Y0 7 /*!< Position Y du channel 1, 2 et 3 */
+#define SEQUENCER_CH1_X0 7    /*!< Position X du channel 1 */
+#define SEQUENCER_CH2_X0 37   /*!< Position X du channel 2 */
+#define SEQUENCER_CH3_X0 67   /*!< Position X du channel 3 */
+#define SEQUENCER_CH_Y0 7     /*!< Position Y du channel 1, 2 et 3 */
 #define SEQUENCER_CH_LINES 22 /*!< Largeur des channels */
-#define SEQUENCER_CH_COLS 26 /*!< Hauteur des channels */
+#define SEQUENCER_CH_COLS 26  /*!< Hauteur des channels */
+
+#define KEY_BUTTON_CHANGEMODE 't'
+#define KEY_BUTTON_CH3NPLAY 'r'
+#define KEY_BUTTON_CH2NQUIT 'e'
+#define KEY_BUTTON_CH1NSAVE 'z'
 
 
-
-#define PC_ENTER 10 /*!< Touche entrée sur PC */
 
 /**
  * \enum choices_t
  * \brief Enumération des choix possibles dans les menus
  * \details Cette énumération permet de définir les choix possibles dans les menus
-*/
-typedef enum {
-    CHOICE_QUITAPP, /*!< Quitter l'application */
-    CHOICE_HELP, /*!< Afficher l'aide */
+ */
+typedef enum
+{
+    CHOICE_QUITAPP,        /*!< Quitter l'application */
+    CHOICE_HELP,           /*!< Afficher l'aide */
     CHOICE_CONECTION_MENU, /*!< Aller au menu de connexion */
-    CHOICE_MENU_LIST, /*!< Aller au menu de listes */
-    CHOICE_SEQUENCER, /*!< Aller au séquenceur */
-    CHOICE_SAVENQUIT, /*!< Sauvegarder et quitter */
-    CHOICE_CREATEMUSIC, /*!< Créer une musique */
-    CHOICE_MAIN_MENU, /*!< Retourner au menu principal */
-} choices_t; 
+    CHOICE_MENU_LIST,      /*!< Aller au menu de listes */
+    CHOICE_SEQUENCER,      /*!< Aller au séquenceur */
+    CHOICE_SAVENQUIT,      /*!< Sauvegarder et quitter */
+    CHOICE_CREATEMUSIC,    /*!< Créer une musique */
+    CHOICE_MAIN_MENU,      /*!< Retourner au menu principal */
+} choices_t;
 
 /**
  * \enum color_pairs_t
  * \brief Enumération des paires de couleurs utilisées dans l'application
-*/
-typedef enum {
+ */
+typedef enum
+{
     // Couleurs pour les menus
-    COLOR_PAIR_MENU = 10, /*!< Couleur du menu */
+    COLOR_PAIR_MENU = 10,    /*!< Couleur du menu */
     COLOR_PAIR_MENU_WARNING, /*!< Couleur du menu en cas d'erreur */
-    COLOR_PAIR_MENU_PROMPT, /*!< Couleur du menu d'entrée utilisateur */
+    COLOR_PAIR_MENU_PROMPT,  /*!< Couleur du menu d'entrée utilisateur */
 
     // Couleurs pour le séquenceur
-    COLOR_PAIR_SEQ = 20, /*!< Couleur du séquenceur */
-    COLOR_PAIR_SEQ_SELECTED, /*!< Couleur du séquenceur sélectionné */
-    COLOR_PAIR_SEQ_BORDER, /*!< Couleur des bordures du séquenceur */
-    COLOR_PAIR_SEQ_PLAYED, /*!< Couleur de la ligne jouée */
-    COLOR_PAIR_SEQ_OCTAVE, /*!< Couleur de la ligne d'octave */
-    COLOR_PAIR_SEQ_NOTE, /*!< Couleur de la ligne de note */
-    COLOR_PAIR_SEQ_INSTRUMENT, /*!< Couleur de la ligne d'instrument */
-    COLOR_PAIR_SEQ_SHIFT, /*!< Couleur de la ligne de temps */
-    COLOR_PAIR_SEQ_HEADER_CH1, /*!< Couleur de l'entête du channel 1 */
-    COLOR_PAIR_SEQ_HEADER_CH2, /*!< Couleur de l'entête du channel 2 */
-    COLOR_PAIR_SEQ_HEADER_CH3, /*!< Couleur de l'entête du channel 3 */
-    COLOR_PAIR_SEQ_HEADER_INFO, /*!< Couleur de l'entête d'information */
+    COLOR_PAIR_SEQ = 20,         /*!< Couleur du séquenceur */
+    COLOR_PAIR_SEQ_SELECTED,     /*!< Couleur du séquenceur sélectionné */
+    COLOR_PAIR_SEQ_BORDER,       /*!< Couleur des bordures du séquenceur */
+    COLOR_PAIR_SEQ_PLAYED,       /*!< Couleur de la ligne jouée */
+    COLOR_PAIR_SEQ_OCTAVE,       /*!< Couleur de la ligne d'octave */
+    COLOR_PAIR_SEQ_NOTE,         /*!< Couleur de la ligne de note */
+    COLOR_PAIR_SEQ_INSTRUMENT,   /*!< Couleur de la ligne d'instrument */
+    COLOR_PAIR_SEQ_SHIFT,        /*!< Couleur de la ligne de temps */
+    COLOR_PAIR_SEQ_HEADER_CH1,   /*!< Couleur de l'entête du channel 1 */
+    COLOR_PAIR_SEQ_HEADER_CH2,   /*!< Couleur de l'entête du channel 2 */
+    COLOR_PAIR_SEQ_HEADER_CH3,   /*!< Couleur de l'entête du channel 3 */
+    COLOR_PAIR_SEQ_HEADER_INFO,  /*!< Couleur de l'entête d'information */
     COLOR_PAIR_SEQ_HEADER_TITLE, /*!< Couleur de l'entête de titre */
 } color_pairs_t;
 
-typedef enum {
+typedef enum
+{
     COLOR_LIGHTGREY = 10, /*!< Gris clair */
 } custom_colors_t;
 
@@ -93,39 +102,44 @@ typedef enum {
  * \enum sequencer_nav_col_t
  * \brief Enumération des colonnes du séquenceur
  * \details Cette énumération permet de définir les colonnes du séquenceur
-*/
-typedef enum {
-    SEQUENCER_NAV_COL_LINE = 0, /*!< Ligne */
-    SEQUENCER_NAV_COL_NOTE, /*!< Colonne de note */
-    SEQUENCER_NAV_COL_OCTAVE, /*!< Colonne d'octave */
+ */
+typedef enum
+{
+    SEQUENCER_NAV_COL_LINE = 0,   /*!< Ligne */
+    SEQUENCER_NAV_COL_NOTE,       /*!< Colonne de note */
+    SEQUENCER_NAV_COL_OCTAVE,     /*!< Colonne d'octave */
     SEQUENCER_NAV_COL_INSTRUMENT, /*!< Colonne d'instrument */
-    SEQUENCER_NAV_COL_TIME, /*!< Colonne de temps */
-    SEQUENCER_NAV_COL_MAX, /*!< Nombre de colonnes */
+    SEQUENCER_NAV_COL_TIME,       /*!< Colonne de temps */
+    SEQUENCER_NAV_COL_MAX,        /*!< Nombre de colonnes */
 } sequencer_nav_col_t;
 
 /**
  * \enum sequencer_nav_ch_t
  * \brief Enumération des channels du séquenceur
  * \details Cette énumération permet de définir les channels du séquenceur
-*/
-typedef enum {
+ */
+typedef enum
+{
     SEQUENCER_NAV_CH1 = 0, /*!< Channel 1 */
-    SEQUENCER_NAV_CH2, /*!< Channel 2 */
-    SEQUENCER_NAV_CH3, /*!< Channel 3 */
-    SEQUENCER_NAV_CH_MAX, /*!< Nombre de channels */
+    SEQUENCER_NAV_CH2,     /*!< Channel 2 */
+    SEQUENCER_NAV_CH3,     /*!< Channel 3 */
+    SEQUENCER_NAV_CH_MAX,  /*!< Nombre de channels */
 } sequencer_nav_ch_t;
 
 /**
  * \struct sequencer_nav_t
  * \brief Structure de navigation dans le séquenceur
  * \details Cette structure permet de définir la position de navigation dans le séquenceur
- * 
-*/
-typedef struct {
-    sequencer_nav_col_t col; /*!< Colonne */
-    sequencer_nav_ch_t ch; /*!< Channel */
-    int start[SEQUENCER_NAV_COL_MAX]; /*!< Position de départ [col] */
-    int line; /*!< Ligne */
+ *
+ */
+typedef struct
+{
+    sequencer_nav_col_t col;          /*!< Colonne */
+    sequencer_nav_ch_t ch;            /*!< Channel */
+    int start[SEQUENCER_NAV_CH_MAX]; /*!< Position de départ [col] */
+    int lines[SEQUENCER_NAV_CH_MAX];   /*!< Ligne [ch] */
+    //int line;
+    int playMode;                    /*!< Mode de lecture */
 } sequencer_nav_t;
 
 /**
@@ -191,9 +205,14 @@ choices_t show_sequencer(music_t *music, int connected);
  * \fn void create_sequencer_nav()
  * \brief Création de la structure de navigation dans le séquenceur
  * \return La structure de navigation
-*/
+ */
 sequencer_nav_t create_sequencer_nav();
 
-
+/**
+ * \fn int getchr_wiringpi();
+ * \brief Récupération de l'équivalent d'un bouton physique
+ * \return Le caractère correspondant au bouton
+ */
+int getchr_wiringpi();
 
 #endif
