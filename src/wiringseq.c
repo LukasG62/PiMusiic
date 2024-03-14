@@ -54,7 +54,7 @@ void init_wiringpi(){
  */
 unsigned char is_button_pressed(){
 	unsigned char bitmap = 0;
-	int level;
+	int level = 0;
 	
 	//col2
 	digitalWrite(BUTTON_COL2, LOW);
@@ -66,11 +66,10 @@ unsigned char is_button_pressed(){
 	//button play
 	level=!digitalRead(BUTTON_ROW4);
 	if(level == HIGH){
-		bitmap = bitmap | BUTTON_CH3NPLAY;
+		bitmap = bitmap | BUTTON_CH1NSAVE;
 	}
 	
 	digitalWrite(BUTTON_COL2,HIGH);
-	usleep(1);
 	//col3
 	digitalWrite(BUTTON_COL3, LOW);
 	//button up
@@ -91,10 +90,9 @@ unsigned char is_button_pressed(){
 	//button save
 	level=!digitalRead(BUTTON_ROW4);
 	if(level == HIGH){
-		bitmap = bitmap | BUTTON_CH1NSAVE;
+		bitmap = bitmap | BUTTON_CH2NQUIT;
 	}
 	digitalWrite(BUTTON_COL3,HIGH);
-	usleep(1);
 	//col4
 	digitalWrite(BUTTON_COL4,LOW);
 	//button right
@@ -105,10 +103,10 @@ unsigned char is_button_pressed(){
 	//button quit
 	level=!digitalRead(BUTTON_ROW4);
 	if(level == HIGH){
-		bitmap = bitmap | BUTTON_CH2NQUIT;
+		bitmap = bitmap | BUTTON_CH3NPLAY;
 	}
 	digitalWrite(BUTTON_COL4,HIGH);
-	usleep(1);
+
 	return bitmap;
 }
 
@@ -216,5 +214,3 @@ int read_proximity_captor(){
 		return 0;	
 	
 }
-
-
