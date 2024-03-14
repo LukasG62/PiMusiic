@@ -1,7 +1,7 @@
 ## Variables
 
 # Default Raspberry Pi IP address
-IP_RPI?=192.168.42.131
+IP_RPI?=192.168.234.131
 # Path to cross-compiler binaries
 PATH_CC_BINS?=/home/lukas/LE3/OCC/tools-master/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin
 # Default target fake root directory
@@ -61,7 +61,7 @@ $(BIN_RPI_DIR)/%: $(OBJ_DIR)/%-pi.o $(LIB_DIR)/libmusic-pi.a  $(LIB_DIR)/libinet
 $(OBJ_DIR)/pimusiic-pc.o: $(SRC_DIR)/pimusiic.c
 	@mkdir -p $(OBJ_DIR)
 	@echo "\t\tCompilation du fichier objet $@"
-	@gcc -o $@ -c  $< -I$(INCLUDE_DIR)
+	@gcc -o $@ -c  $< -I$(INCLUDE_DIR) -Wall
 
 $(OBJ_DIR)/pi2iserv-pc.o: $(SRC_DIR)/pi2iserv.c
 	@mkdir -p $(OBJ_DIR)
@@ -81,19 +81,19 @@ $(LIB_DIR)/libinet-pc.a: $(OBJ_DIR)/data-pc.o $(OBJ_DIR)/session-pc.o $(OBJ_DIR)
 $(OBJ_DIR)/%-pc.o: $(SRC_DIR)/%.c $(INCLUDE_DIR)/%.h
 	@mkdir -p $(OBJ_DIR)
 	@echo "\t\tCompilation du fichier objet $@"
-	@gcc -o $@ -c  $< -I$(INCLUDE_DIR)
+	@gcc -o $@ -c  $< -I$(INCLUDE_DIR) -Wall
 
 
 ######## FOR TARGET ########
 $(OBJ_DIR)/pimusiic-pi.o: $(SRC_DIR)/pimusiic.c
 	@mkdir -p $(OBJ_DIR)
 	@echo "\t\tCompilation du fichier objet $@"
-	@$(CCC) -o $@ -c  $< -I$(INCLUDE_DIR)
+	@$(CCC) -o $@ -c  $< -I$(INCLUDE_DIR) -g
 
 $(OBJ_DIR)/pi2iserv-pi.o: $(SRC_DIR)/pi2iserv.c
 	@mkdir -p $(OBJ_DIR)
 	@echo "\t\tCompilation du fichier objet $@"
-	@$(CCC) -o $@ -c  $< -I$(INCLUDE_DIR)
+	@$(CCC) -o $@ -c  $< -I$(INCLUDE_DIR) -g
 
 $(LIB_DIR)/libmusic-pi.a: $(OBJ_DIR)/graphicseq-pi.o $(OBJ_DIR)/mpp-pi.o $(OBJ_DIR)/note-pi.o $(OBJ_DIR)/sound-pi.o $(OBJ_DIR)/wiringseq-pi.o $(OBJ_DIR)/request-pi.o
 	@mkdir -p $(LIB_DIR)
@@ -108,7 +108,7 @@ $(LIB_DIR)/libinet-pi.a: $(OBJ_DIR)/data-pi.o $(OBJ_DIR)/session-pi.o $(OBJ_DIR)
 $(OBJ_DIR)/%-pi.o: $(SRC_DIR)/%.c $(INCLUDE_DIR)/%.h
 	@mkdir -p $(OBJ_DIR)
 	@echo "\t\tCompilation du fichier objet $@"
-	@$(CCC) -o $@ -c  $< -I$(INCLUDE_DIR)
+	@$(CCC) -o $@ -c  $< -I$(INCLUDE_DIR) -Wall -g 
 
 
 # installation rule
