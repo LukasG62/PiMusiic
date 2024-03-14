@@ -5,6 +5,7 @@
  * \version 1.0
 */
 #include "graphicseq.h"
+#include "wiringseq.h"
 
 /**********************************************************************************************************************/
 /*                                           Private functions                                                        */
@@ -129,6 +130,8 @@ void init_ncurses() {
     noecho(); // Désactivation de l'affichage des caractères saisis
     cbreak(); // Désactivation du buffering de ligne
     keypad(stdscr, TRUE); // Activation des touches spéciales
+    // on met un timeout de 50us pour getch
+    timeout(1);
     curs_set(0); // Désactivation du curseur
     start_color(); // Activation des couleurs
     init_colors(); // Initialisation des couleurs
@@ -204,6 +207,7 @@ choices_t show_connection_menu() {
 choices_t show_create_music_menu(music_t *music, int connected) {
     init_menu("Create music", "", 1);
     music->bpm = 120;
+    int oldBpm = music->bpm;
     gettimeofday(&music->date, NULL);
     if(connected == 0) {
         attron(COLOR_PAIR(COLOR_PAIR_MENU_WARNING) | A_BOLD);
@@ -235,6 +239,9 @@ choices_t show_create_music_menu(music_t *music, int connected) {
     int c;
     while(1) {
         c = getch();
+        mvprintw(0,0,"%X",c);
+        if(c == ERR) c = getchr_wiringpi();
+
         switch(c) {
             case KEY_UP:
                 if (music->bpm < 300) music->bpm++;
@@ -242,10 +249,10 @@ choices_t show_create_music_menu(music_t *music, int connected) {
             case KEY_DOWN:
                 if (music->bpm > 0) music->bpm--;
                 break;
-            case 10:
+            case 't':
                 return CHOICE_SEQUENCER;
             
-            case 27:
+            case 'a':
                 return CHOICE_MAIN_MENU;
 
             break;
@@ -253,6 +260,11 @@ choices_t show_create_music_menu(music_t *music, int connected) {
         attron(COLOR_PAIR(COLOR_PAIR_MENU_PROMPT));
         mvprintw(7, 45, "%3d", music->bpm);
         attroff(COLOR_PAIR(COLOR_PAIR_MENU_PROMPT));
+
+        if(oldBpm != music->bpm) {
+            display_bpm(music->bpm);
+            oldBpm = music->bpm;
+        }
     }
     refresh();
 }
@@ -270,11 +282,15 @@ choices_t show_create_music_menu(music_t *music, int connected) {
  */
 choices_t show_sequencer(music_t *music, int connected) {
     clear(); // on nettoie l'écran
+    bkgd(COLOR_PAIR(COLOR_PAIR_SEQ)); // on change la couleur du background
     WINDOW *seqInfo = newwin(SEQUENCER_INFO_LINES, SEQUENCER_INFO_COLS, SEQUENCER_INFO_Y0, SEQUENCER_INFO_X0);
     WINDOW *seqHelp = newwin(SEQUENCER_HELP_LINES, SEQUENCER_HELP_COLS, SEQUENCER_HELP_Y0, SEQUENCER_HELP_X0);
     WINDOW *seqBody = newwin(SEQUENCER_BODY_LINES, SEQUENCER_BODY_COLS, SEQUENCER_BODY_Y0, SEQUENCER_BODY_X0);
     WINDOW *channelWin[3];
-
+    int btnMode = 0;
+    int c; // la touche pressée
+    choices_t choice = -1;
+    note_t *note;
     channelWin[0] = newwin(SEQUENCER_CH_LINES, SEQUENCER_CH_COLS, SEQUENCER_CH_Y0, SEQUENCER_CH1_X0);
     channelWin[1] = newwin(SEQUENCER_CH_LINES, SEQUENCER_CH_COLS, SEQUENCER_CH_Y0, SEQUENCER_CH2_X0);
     channelWin[2] = newwin(SEQUENCER_CH_LINES, SEQUENCER_CH_COLS, SEQUENCER_CH_Y0, SEQUENCER_CH3_X0);
@@ -286,52 +302,50 @@ choices_t show_sequencer(music_t *music, int connected) {
     show_sequencer_info(seqInfo, music, 0);
     show_sequencer_help(seqHelp);
     box(seqBody, 0, 0);
-    wrefresh(seqBody);
     mvwprintw(seqBody, 0, 1, "%s", "SEQUENCER");
     wrefresh(seqBody);
     init_sequencer_channels(channelWin[0], channelWin[1], channelWin[2], music);
-
     // Navigation dans le séquenceur
     // activation des touches spéciales
     keypad(seqBody, TRUE);
-    while (1) {
-        int c = wgetch(seqBody);
+    wtimeout(seqBody, 1);
+    while (choice == -1) {
+        c = wgetch(seqBody);
+        if (c == ERR) c = getchr_wiringpi();
         switch(c) {
             case KEY_UP:
                 if(seqNav.col == SEQUENCER_NAV_COL_LINE) {
-                    if (seqNav.line > 0) seqNav.line--;
-                    if (seqNav.line < seqNav.start[seqNav.ch]) seqNav.start[seqNav.ch] = seqNav.start[seqNav.ch] - SEQUENCER_CH_LINES + 3; // On défile vers le haut
+                    if (seqNav.lines[seqNav.ch] > 0) seqNav.lines[seqNav.ch]--;
+                    if (seqNav.lines[seqNav.ch] < seqNav.start[seqNav.ch]) seqNav.start[seqNav.ch] = seqNav.start[seqNav.ch] - SEQUENCER_CH_LINES + 3; // On défile vers le haut
+                    break;
                 }
                 // Sinon modification de la note
-                else {
-                    note_t *note = &(music->channels[seqNav.ch].notes[seqNav.line]);
-                    change_sequencer_note(note, seqNav.col, scale, 1);
-                }
+                note = &(music->channels[seqNav.ch].notes[seqNav.lines[seqNav.ch]]);
+                change_sequencer_note(note, seqNav.col, scale, 1);
                 break;
             case KEY_DOWN:
                 if(seqNav.col == SEQUENCER_NAV_COL_LINE) {
-                    if (seqNav.line >= seqNav.start[seqNav.ch] + SEQUENCER_CH_LINES - 4) seqNav.start[seqNav.ch] = seqNav.start[seqNav.ch] + SEQUENCER_CH_LINES - 3; // On défile vers le bas
-                    if (seqNav.line < CHANNEL_MAX_NOTES - 1) seqNav.line++;
+                    if (seqNav.lines[seqNav.ch] >= seqNav.start[seqNav.ch] + SEQUENCER_CH_LINES - 4) seqNav.start[seqNav.ch] = seqNav.start[seqNav.ch] + SEQUENCER_CH_LINES - 3; // On défile vers le bas
+                    if (seqNav.lines[seqNav.ch] < CHANNEL_MAX_NOTES - 1) seqNav.lines[seqNav.ch]++;
+                    break;
                 }
                 // Sinon modification de la note
-                else {
-                    note_t *note = &(music->channels[seqNav.ch].notes[seqNav.line]);
-                    change_sequencer_note(note, seqNav.col, scale, 0);
-                }
+                note = &(music->channels[seqNav.ch].notes[seqNav.lines[seqNav.ch]]);
+                change_sequencer_note(note, seqNav.col, scale, 0);
                 break;
             case KEY_LEFT:
                 // Si on est sur la colonne de la ligne on change de channel 
                 if (seqNav.col == SEQUENCER_NAV_COL_LINE) {
                     // on change de channel
                     int newChannel = (seqNav.ch - 1) != -1 ? seqNav.ch-1 : SEQUENCER_NAV_CH_MAX - 1;
-                    seqNav.start[newChannel] = seqNav.start[seqNav.ch]; // on switch de channel mais on garde la ligne à la même position
+                    seqNav.start[newChannel] = seqNav.start[seqNav.ch];
+                    seqNav.lines[newChannel] = seqNav.lines[seqNav.ch];
                     seqNav.ch = newChannel;
                     seqNav.col = SEQUENCER_NAV_COL_TIME; // on revient à la colonne de la durée
                     break;
                 }
                 // Sinon on change de colonne
-                else if (seqNav.col > 0) seqNav.col--;
-
+                if (seqNav.col > 0) seqNav.col--;
                 break;
             case KEY_RIGHT:
                 // Si on est sur la colonne de la durée on change de channel
@@ -339,21 +353,60 @@ choices_t show_sequencer(music_t *music, int connected) {
                     // on change de channel
                     int newChannel = (seqNav.ch + 1) % SEQUENCER_NAV_CH_MAX;
                     seqNav.start[newChannel] = seqNav.start[seqNav.ch]; // on switch de channel mais on garde la ligne à la même position
+                    seqNav.lines[newChannel] = seqNav.lines[seqNav.ch];
                     seqNav.ch = newChannel;
                     seqNav.col = SEQUENCER_NAV_COL_LINE; // on revient à la colonne de la ligne
                     break;
                 }
                 if (seqNav.col < SEQUENCER_NAV_COL_MAX - 1) seqNav.col++;
                 break;
+
+            case KEY_BUTTON_CHANGEMODE:
+                btnMode = btnMode == 0 ? 1 : 0;
+                break;
+
+            case KEY_BUTTON_CH1NSAVE:
+                if(btnMode == 0) {
+                    choice = CHOICE_SAVENQUIT;
+                    break;
+                }
+                // On change de channel
+                seqNav.ch = 0;
+                break;
+
+            case KEY_BUTTON_CH2NQUIT:
+                if(btnMode == 0) {
+                    choice = CHOICE_QUITAPP;
+                    break;
+                }
+                // On change de channel
+                seqNav.ch = 1;
+                break;
+
+            case KEY_BUTTON_CH3NPLAY:
+                if(btnMode == 0) {
+                    break;
+                } 
+                // On change de channel
+                seqNav.ch = 2;
+                break;
         }
         // On rafraichit les fenêtres
-        show_sequencer_info(seqInfo, music, 0);
+        show_sequencer_info(seqInfo, music, btnMode);
         print_sequencer_lines(channelWin[0], 0, music, &seqNav);
         print_sequencer_lines(channelWin[1], 1, music, &seqNav);
         print_sequencer_lines(channelWin[2], 2, music, &seqNav);
-        mvwprintw(seqBody, 0, 1, "%d, %d, %d %d", seqNav.start[0], seqNav.start[1], seqNav.start[2], seqNav.line);
-
+        mvwprintw(seqBody, 0, 1, "%d, %d, %d %d", seqNav.lines[0], seqNav.lines[1], seqNav.lines[2], seqNav.ch);
     }
+
+    // On libère la mémoire
+    delwin(seqInfo);
+    delwin(seqHelp);
+    delwin(seqBody);
+    delwin(channelWin[0]);
+    delwin(channelWin[1]);
+    delwin(channelWin[2]);
+    return choice;
 }
 
 /**
@@ -366,9 +419,33 @@ sequencer_nav_t create_sequencer_nav() {
     nav.col = SEQUENCER_NAV_COL_LINE;
     nav.ch = SEQUENCER_NAV_CH1;
     int i;
-    for (i = 0; i < SEQUENCER_NAV_COL_MAX; i++) nav.start[i] = 0;
-    nav.line = 0;
+    for (i = 0; i < SEQUENCER_NAV_CH_MAX; i++) {
+        nav.start[i] = 0;
+        nav.lines[i] = 0;
+    }
+    nav.playMode = 0;
+    //nav.line = 0;
     return nav;
+}
+
+/**
+ * \fn char getchr_wiringpi();
+ * \brief Récupération de l'équivalent d'un bouton physique
+ * \return Le caractère correspondant au bouton
+ */
+int getchr_wiringpi()
+{
+    unsigned char bitmap = is_button_pressed();
+    usleep(100000);
+    if(IS_BUTTON_PRESSED(bitmap, BUTTON_UP)) return KEY_UP;
+    if(IS_BUTTON_PRESSED(bitmap, BUTTON_LEFT)) return KEY_LEFT;
+    if(IS_BUTTON_PRESSED(bitmap, BUTTON_RIGHT)) return KEY_RIGHT;
+    if(IS_BUTTON_PRESSED(bitmap, BUTTON_DOWN)) return KEY_DOWN;
+    if(IS_BUTTON_PRESSED(bitmap, BUTTON_CHANGEMODE)) return KEY_BUTTON_CHANGEMODE;
+    if(IS_BUTTON_PRESSED(bitmap, BUTTON_CH3NPLAY)) return KEY_BUTTON_CH3NPLAY;
+    if(IS_BUTTON_PRESSED(bitmap, BUTTON_CH2NQUIT)) return KEY_BUTTON_CH2NQUIT;
+    if(IS_BUTTON_PRESSED(bitmap, BUTTON_CH1NSAVE)) return KEY_BUTTON_CH1NSAVE;
+    return ERR;
 }
 
 /**********************************************************************************************************************/
@@ -384,16 +461,17 @@ sequencer_nav_t create_sequencer_nav() {
  * \param mode Le mode des boutons (0 pour le mode NAVIGATION, 1 pour le mode EDITION)
  */
 void show_sequencer_info(WINDOW *win, music_t *music, int mode) {
-    // On efface la fenêtre
     werase(win);
     // On crée les bordures
     box(win, 0, 0);
     mvwprintw(win, 0, 1, "%s", "INFO");
-    // On affiche les informations
     mvwprintw(win, 1, 1, "Created : %ld", music->date.tv_sec);
     mvwprintw(win, 2, 1, "BPM : %d", music->bpm);
-    mvwprintw(win, 3, 1, "Mode : %s", mode == 0 ? "NAVIGATION" : "EDITION");
-    mvwprintw(win, 4, 1, "[BTN1] Save        [BTN2] Play       [BTN3] Quit ");
+    mvwprintw(win, 3, 1, "Mode : %s", mode == 0 ? "EDIT" : "NAVIGATION");
+    // On efface la fenêtre
+    if(mode == 0) mvwprintw(win, 4, 1, "[BTN1] Save        [BTN2] Play       [BTN3] Quit ");
+    else mvwprintw(win, 4, 1, "[BTN1] CH1         [BTN2] CH2       [BTN3] CH3 ");
+
     wrefresh(win);
 }
 
@@ -571,7 +649,9 @@ choices_t create_menu(const char *title, const char *text, char **choices, int n
 
     // On gère la navigation dans le menu
     while(1) {
+        // On gére à la fois les touches du clavier et les boutons physiques
         c = getch();
+        if(c == ERR) c = getchr_wiringpi();
         switch(c) {
             case KEY_UP:
                 if (curr > 0) curr--;
@@ -609,7 +689,7 @@ void print_sequencer_lines(WINDOW *win, short channelId, music_t *music, sequenc
     for(i = 0; i < SEQUENCER_CH_LINES - 3; i++) {
         note_t note = music->channels[channelId].notes[seqNav->start[channelId] + i];
         int isSelected = 0;
-        if(seqNav->ch == channelId && seqNav->line == seqNav->start[channelId]+i) isSelected = 1;
+        if(seqNav->ch == channelId && seqNav->lines[channelId] == seqNav->start[channelId]+i) isSelected = 1;
         print_sequencer_note(win, note, channelId, i, seqNav, isSelected);
     }
     // On rafraichit la fenêtre
@@ -631,43 +711,35 @@ void print_sequencer_note(WINDOW *win, note_t note, short ch, int line, sequence
     //TODO : Rajouter si la ligne est jouée alors toute la ligne est inversée
     char instrumentName[5]; // Nom de l'instrument
     char noteName[3]; // Nom de la note
+    int playModeSelected = seqNav->playMode && seqNav->lines[ch] == seqNav->start[ch] + line ? 1 : 0;
     note2str(note, noteName); // On récupère le nom de la note
     instrument2str(note.instrument, instrumentName); // On récupère le nom de l'instrument
     wattron(win, COLOR_PAIR(COLOR_PAIR_SEQ) | REVERSE_IF_COL(seqNav->col, SEQUENCER_NAV_COL_LINE, isSelected));
-        mvwprintw(win, 2+line, 1, "%04X", seqNav->start[ch] + line);
-    wattroff(win, COLOR_PAIR(COLOR_PAIR_SEQ) | A_REVERSE);
-    
+    mvwprintw(win, 2+line, 1, "%04X", seqNav->start[ch] + line);
+    wattroff(win, COLOR_PAIR(COLOR_PAIR_SEQ) | REVERSE_IFNOT_PLAYMODE(seqNav->playMode, playModeSelected));
+
     wattron(win, COLOR_PAIR(COLOR_PAIR_SEQ));
     mvwprintw(win, 2+line, 5, "|");
-    wattroff(win, COLOR_PAIR(COLOR_PAIR_SEQ) | A_REVERSE);
-    
-    wattron(win, COLOR_PAIR(COLOR_PAIR_SEQ_NOTE) | REVERSE_IF_COL(seqNav->col, SEQUENCER_NAV_COL_NOTE, isSelected));
-    mvwprintw(win, 2+line, 6, " %-2s ", noteName);
-    wattroff(win, COLOR_PAIR(COLOR_PAIR_SEQ_NOTE) | A_REVERSE);
-    
-    wattron(win, COLOR_PAIR(COLOR_PAIR_SEQ));
     mvwprintw(win, 2+line, 10, "|");
-    wattroff(win, COLOR_PAIR(COLOR_PAIR_SEQ));
-    
-    wattron(win, COLOR_PAIR(COLOR_PAIR_SEQ_OCTAVE) | REVERSE_IF_COL(seqNav->col, SEQUENCER_NAV_COL_OCTAVE, isSelected));
-    mvwprintw(win, 2+line, 11, " %02d ", note.octave);
-    wattroff(win, COLOR_PAIR(COLOR_PAIR_SEQ_OCTAVE) | A_REVERSE);
-    
-    wattron(win, COLOR_PAIR(COLOR_PAIR_SEQ));
     mvwprintw(win, 2+line, 15, "|");
-    wattroff(win, COLOR_PAIR(COLOR_PAIR_SEQ));
-    
-    wattron(win, COLOR_PAIR(COLOR_PAIR_SEQ_INSTRUMENT) | REVERSE_IF_COL(seqNav->col, SEQUENCER_NAV_COL_INSTRUMENT, isSelected));
-    mvwprintw(win, 2+line, 16, "%s ", instrumentName);
-    wattroff(win, COLOR_PAIR(COLOR_PAIR_SEQ_INSTRUMENT) |A_REVERSE);
-    
-    wattron(win, COLOR_PAIR(COLOR_PAIR_SEQ));
     mvwprintw(win, 2+line, 20, "|");
     wattroff(win, COLOR_PAIR(COLOR_PAIR_SEQ));
     
+    wattron(win, COLOR_PAIR(COLOR_PAIR_SEQ_NOTE) | REVERSE_IF_COL(seqNav->col, SEQUENCER_NAV_COL_NOTE, isSelected));
+    mvwprintw(win, 2+line, 6, " %-2s ", noteName);
+    wattroff(win, COLOR_PAIR(COLOR_PAIR_SEQ_NOTE) | REVERSE_IFNOT_PLAYMODE(seqNav->playMode, playModeSelected) );
+    
+    wattron(win, COLOR_PAIR(COLOR_PAIR_SEQ_OCTAVE) | REVERSE_IF_COL(seqNav->col, SEQUENCER_NAV_COL_OCTAVE, isSelected));
+    mvwprintw(win, 2+line, 11, " %02d ", note.octave);
+    wattroff(win, COLOR_PAIR(COLOR_PAIR_SEQ_OCTAVE) | REVERSE_IFNOT_PLAYMODE(seqNav->playMode, playModeSelected) );
+    
+    wattron(win, COLOR_PAIR(COLOR_PAIR_SEQ_INSTRUMENT) | REVERSE_IF_COL(seqNav->col, SEQUENCER_NAV_COL_INSTRUMENT, isSelected));
+    mvwprintw(win, 2+line, 16, "%s", instrumentName);
+    wattroff(win, COLOR_PAIR(COLOR_PAIR_SEQ_INSTRUMENT) | REVERSE_IFNOT_PLAYMODE(seqNav->playMode, playModeSelected) );
+    
     wattron(win, COLOR_PAIR(COLOR_PAIR_SEQ_SHIFT) | REVERSE_IF_COL(seqNav->col, SEQUENCER_NAV_COL_TIME, isSelected));
     mvwprintw(win, 2+line, 21, " %02d ", note.time);
-    wattroff(win, COLOR_PAIR(COLOR_PAIR_SEQ_SHIFT) | A_REVERSE);
+    wattroff(win, COLOR_PAIR(COLOR_PAIR_SEQ_SHIFT) | A_REVERSE ); // Dans tous les cas on déactive le reverse à la fin
 }
 
 /**
