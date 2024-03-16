@@ -16,7 +16,7 @@
 #define MUSIC_MAX_CHANNELS 3 /*!< Nombre de channels maximum dans une musique */
 
 //Fréquences des notes
-#define REF_OCTAVE 4 /*!< Octave de référence */
+#define REF_OCTAVE 3 /*!< Octave de référence */
 #define NOTE_C_FQ 261.63 /*!< Fréquence du DO à l’octave de référence */
 #define NOTE_CS_FQ 277.18 /*!< Fréquence du DO# à l’octave de référence */
 #define NOTE_D_FQ 293.66 /*!< Fréquence du RÉ à l’octave de référence */
