@@ -1,3 +1,9 @@
+/**
+ * @file mpp.c
+ * @brief Definition des fonctions pour le serveur MPP
+ * @version 1.0
+ * 
+ */
 #include "mpp.h"
 
 
@@ -6,20 +12,47 @@
 /**********************************************************************************************************************/
 
 /**
- * \fn void serialize_music(music_t *music, buffer_t buffer);
- * \brief Sérialise une musique
- * \param music Musique à sérialiser
- * \param buffer Buffer dans lequel sérialiser la musique
-*/
+ * @fn void write_list_music(musicId_list_t *list, FILE *file);
+ * @brief Ecrit une liste d'identifiants de musiques dans un fichier
+ * @param list Liste d'identifiants de musiques
+ * @param file Le fichier dans lequel écrire la liste
+ */
+void write_list_music(musicId_list_t *list, FILE *file);
+/**
+ * @fn void read_list_music(musicId_list_t *list, FILE *file);
+ * @brief Lit une liste d'identifiants de musiques depuis un fichier
+ * @param list La liste d'identifiants de musiques
+ * @param file Le fichier depuis lequel lire la liste
+ */
+void read_list_music(musicId_list_t *list, FILE *file);
+
+/**
+ * @fn serialize_music(music_t *music, buffer_t buffer);
+ * @brief Sérialise une musique
+ * @param music La musique à sérialiser
+ * @param buffer Le buffer dans lequel sérialiser la musique
+ * @note La musique est sérialisée de la manière suivante :
+ * <date> <bpm>
+ * <line> <noteid> <octave> <instrument> <time>
+ * ...
+ * P
+ * <line> <noteid> <octave> <instrument> <time>
+ * ...
+ * P
+ * <line> <noteid> <octave> <instrument> <time>
+ * P
+ * @warning La musique doit être initialisée avant d'appeler cette fonction
+ */
 void serialize_music(music_t *music, buffer_t buffer);
 
 /**
- * \fn void deserialize_music(buffer_t buffer, music_t *music);
- * \brief Désérialise une musique contenue dans un buffer
- * \param music Musique à désérialiser
- * \param token position dans le buffer ou se trouve la musique sérialisée
- * \param saveptr pointeur de sauvegarde pour strtok_r
-*/
+ * @fn deserialize_music(char *token, music_t *music, char *saveptr);
+ * @brief Désérialise une musique contenue dans un buffer
+ * @param token La position dans le buffer ou se trouve la musique sérialisée
+ * @param music La musique désérialisée
+ * @param saveptr Le pointeur de sauvegarde pour strtok_r
+ * @warning La musique doit être initialisée avant d'appeler cette fonction
+ */
 void deserialize_music(char *token, music_t *music, char *saveptr);
 
 
@@ -31,12 +64,12 @@ void deserialize_music(char *token, music_t *music, char *saveptr);
 /**
  * \fn mpp_request_t create_mpp_request(mpp_request_code_t code, char *rfidId, music_t *music, time_t musicId);
  * \brief Créer une requête MPP
- * \param code Code de la requête
- * \param rfidId Identifiant RFID de l'utilisateur
- * \param music Musique à envoyer
- * \param musicId Identifiant de la musique selectionnée (timestamp)
- * \return La requête MPP
-*/
+ * \param code Le code de la requête
+ * \param rfidId L'identifiant RFID
+ * \param music La musique
+ * \param musicId L'identifiant de la musique
+ * \return mpp_request_t 
+ */
 mpp_request_t create_mpp_request(mpp_request_code_t code, char *rfidId, music_t *music, time_t musicId) {
     mpp_request_t request;
     request.code = code;
@@ -47,15 +80,14 @@ mpp_request_t create_mpp_request(mpp_request_code_t code, char *rfidId, music_t 
 }
 
 /**
- * \fn mpp_response_t create_mpp_response(mpp_response_code_t code, char *username, music_t *music, musicId_list_t *musicIds);
- * \brief Créer une réponse MPP
- * \param code Code de la réponse
- * \param username Nom de l'utilisateur
- * \param music Musique à envoyer
- * \param musicIds Liste des identifiants de musiques
- * \param musicId Identifiant de la musique selectionnée (timestamp)
- * \return La réponse MPP
-*/
+ * @fn mpp_response_t create_mpp_response(mpp_response_code_t code, char *username, music_t *music, musicId_list_t *musicIds);
+ * @brief Créer une réponse MPP
+ * @param code Le code de la réponse
+ * @param username Le nom d'utilisateur
+ * @param music Le pointeur vers la musique
+ * @param musicIds La liste des identifiants de musiques
+ * @return mpp_response_t 
+ */
 mpp_response_t create_mpp_response(mpp_response_code_t code, char *username, music_t *music, musicId_list_t *musicIds) {
     mpp_response_t response;
     response.code = code;
@@ -67,10 +99,10 @@ mpp_response_t create_mpp_response(mpp_response_code_t code, char *username, mus
 
 
 /**
- * \fn void print_mpp_request(mpp_request_t *request);
- * \brief Affiche une requête MPP
- * \param request Requête MPP
-*/
+ * @fn print_mpp_request(mpp_request_t *request);
+ * @brief Affiche une requête MPP
+ * @param request La requête MPP
+ */
 void print_mpp_request(mpp_request_t *request) {
     char *code = code2str_request(request->code);
     printf("Request code: %s\n", code);
@@ -80,10 +112,11 @@ void print_mpp_request(mpp_request_t *request) {
 }
 
 /**
- * \fn void print_mpp_response(mpp_response_t *response);
- * \brief Affiche une réponse MPP
- * \param response Réponse MPP
-*/
+ * @fn print_mpp_response(mpp_response_t *response);
+ * @brief Affiche une réponse MPP
+ * @param response 
+ * @see mpp_response_t
+ */
 void print_mpp_response(mpp_response_t *response) {
     int i; 
     char *code = code2str_response(response->code);
@@ -100,34 +133,26 @@ void print_mpp_response(mpp_response_t *response) {
 }
 
 /**
- * \fn serialize_mpp_request(request_t *request, buffer_t buffer);
- * \brief Sérialise une requête MPP
- * \param request Requête MPP
- * \param buffer Buffer dans lequel sérialiser la requête
-*/
+ * @fn serialize_music(music_t *music, buffer_t buffer);
+ * @brief Sérialise une requête MPP
+ * La requête est sérialisée de la manière suivante :
+ * <code> <rfidId>
+ * <music>
+ * @param request 
+ * @param buffer 
+ */
 void serialize_mpp_request(mpp_request_t *request, buffer_t buffer) {
-    /* On sérialise une requête MPP de la manière suivante :
-    <code> <rfidId>
-    <musicId> <bpm>
-    <line> <noteid> <octave> <instrument> <time>
-    ...
-    END
-    <line> <noteid> <octave> <instrument> <time>
-    ...
-    END
-    <line> <noteid> <octave> <instrument> <time>
-    END
-    */
     sprintf(buffer, "%d %s %ld\n", request->code, request->rfidId, request->musicId);
     if(request->music != NULL) serialize_music(request->music, buffer);  
 }
 
 /**
- * \fn deserialize_mpp_request(buffer_t buffer, mpp_request_t *request);
- * \brief Désérialise une requête MPP
- * \param buffer Buffer dans lequel désérialiser la requête
- * \param request Requête MPP
-*/
+ * @fn deserialize_mpp_request(buffer_t buffer, mpp_request_t *request);
+ * @brief Désérialise une requête MPP
+ * @param buffer Le buffer ou se trouve la requête sérialisée
+ * @param request La requête MPP à remplir
+ * @see serialize_mpp_request
+ */
 void deserialize_mpp_request(buffer_t buffer, mpp_request_t *request) {
     // strtok n'est pas thread safe, on utilise strtok_r donc pour cela on doit déclarer un pointeur saveptr
     char *saveptr = NULL;
@@ -150,18 +175,16 @@ void deserialize_mpp_request(buffer_t buffer, mpp_request_t *request) {
 }
 
 /**
- * \fn serialize_mpp_response(mpp_response_t *response, buffer_t buffer);
- * \brief Sérialise une réponse MPP
- * \param response Réponse MPP
- * \param buffer Buffer dans lequel sérialiser la réponse
-*/
+ * @brief Sérialise une reponse MPP
+ * La réponse est sérialisée de la manière suivante :
+ * <code> <username>
+ * <list_size> <musicId> <musicId> <musicId> ...
+ * <music> (même format que pour la requête)
+ * @param response La réponse MPP
+ * @param buffer Le buffer dans lequel sérialiser la réponse
+ */
 void serialize_mpp_response(mpp_response_t *response, buffer_t buffer) {
     int i;
-    /**
-     * <code> <username>
-     * <list_size> <musicId> <musicId> <musicId> ...
-     * <music> (même format que pour la requête)
-    */
     sprintf(buffer, "%d %s\n", response->code, response->username);
     if(response->musicIds != NULL) {
         sprintf(buffer, "%s%d\n", buffer, response->musicIds->size);
@@ -178,11 +201,11 @@ void serialize_mpp_response(mpp_response_t *response, buffer_t buffer) {
 }
 
 /**
- * \fn deserialize_mpp_response(buffer_t buffer, mpp_response_t *response);
- * \brief Désérialise une réponse MPP
- * \param buffer Buffer dans lequel désérialiser la réponse
- * \param response Réponse MPP
-*/
+ * @fn deserialize_mpp_response(buffer_t buffer, mpp_response_t *response);
+ * @brief Désérialise une réponse MPP
+ * @param buffer Le buffer ou se trouve la réponse sérialisée
+ * @param response La réponse MPP à remplir
+ */
 void deserialize_mpp_response(buffer_t buffer, mpp_response_t *response) {
     // strtok n'est pas thread safe, on utilise strtok_r donc pour cela on doit déclarer un pointeur saveptr
     // TODO : robustesse !!
@@ -195,7 +218,6 @@ void deserialize_mpp_response(buffer_t buffer, mpp_response_t *response) {
 
     // Creation de la liste de musiques 
     token = strtok_r(NULL, "\n", &saveptr);
-    printf("Token: %s\n", token);
     if(token != NULL) {
         response->musicIds = (musicId_list_t *)malloc(sizeof(musicId_list_t));
         init_music_list(response->musicIds);
@@ -224,12 +246,11 @@ void deserialize_mpp_response(buffer_t buffer, mpp_response_t *response) {
 }
 
 /**
- * \fn void code2str_request(mpp_request_code_t code, char *str);
- * \brief Convertit un code de requête MPP en chaîne de caractères
- * \param code Code de requête MPP
- * \return La chaîne de caractère
- * \warning La chaine de caractères doit être libérée après utilisation
-*/
+ * @fn serialize_music(music_t *music, buffer_t buffer);
+ * @brief Convertit un code de requête MPP en chaîne de caractères
+ * @param code 
+ * @return char* 
+ */
 char *code2str_request(mpp_request_code_t code) {
     char *str = (char *)malloc(50);
     switch (code) {
@@ -243,6 +264,10 @@ char *code2str_request(mpp_request_code_t code) {
             strcpy(str, "Lister les musiques");
             break;
 
+        case MPP_CONNECT:
+            strcpy(str, "Connexion");
+            break;
+        
         default:
             strcpy(str, "Code inconnu");
             break;
@@ -253,12 +278,13 @@ char *code2str_request(mpp_request_code_t code) {
 }
 
 /**
- * \fn void code2str_response(mpp_response_code_t code, char *str);
- * \brief Convertit un code de réponse MPP en chaîne de caractères
- * \param code Code de réponse MPP
- * \return La chaîne de caractères
- * \warning La chaine de caractères doit être libérée après utilisation
-*/
+ * @fn code2str_response(mpp_response_code_t code);
+ * @brief Convertit un code de réponse MPP en chaîne de caractères
+ * @param code Le code de réponse MPP
+ * @return char* La chaîne de caractères
+ * @warning La chaine de caractères doit être libérée après utilisation
+ * @see mpp_response_code_t
+ */
 char *code2str_response(mpp_response_code_t code) {
     char *str = (char *)malloc(50);
     switch (code) {
@@ -294,25 +320,26 @@ char *code2str_response(mpp_response_code_t code) {
 }
 
 /**
- * \fn void init_music_list(musicId_list_t *list);
- * \brief Initialise une liste de musiques
- * \param list Liste de musiques
- * \details La liste est initialisée avec une taille de 0 et un pointeur NULL
-*/
+ * @fn init_music(music_t *music, time_t date);
+ * @brief initialise une liste d'identifiants de musiques
+ * @param list Liste de musiques
+ * @note la liste est dynamiquement allouée en utilisant add_music_id
+ * @see add_music_id
+ */
 void init_music_list(musicId_list_t *list) {
     list->size = 0;
     list->musicIds = NULL;
 }
 
 /**
- * \fn void add_music_id(musicId_list_t *list, int musicId);
- * \brief Ajoute un identifiant de musique à une liste de musiques
- * \param list Liste de musiques
- * \param musicId Identifiant de la musique à ajouter
- * \details La liste est réallouée pour contenir un identifiant de plus
- * \note la liste est réallouée toutes les REALLLOC_SIZE musiques
- * \see REALLLOC_SIZE 
-*/
+ * @fn add_music_id(musicId_list_t *list, int musicId);
+ * @brief Ajoute un identifiant de musique à une liste de musiques
+ * @param list Liste de musiques
+ * @param musicId L'identifiant de la musique à ajouter
+ * @note La liste doit être initialisée avant d'appeler cette fonction
+ * @warning La liste est réallouée si nécessaire
+ * @see REALLLOC_SIZE
+ */
 void add_music_id(musicId_list_t *list, int musicId) {
     if(list->size % REALLLOC_SIZE == 0) {
         list->musicIds = (time_t *)realloc(list->musicIds, (list->size + REALLLOC_SIZE) * sizeof(time_t));
@@ -320,14 +347,25 @@ void add_music_id(musicId_list_t *list, int musicId) {
     list->musicIds[list->size] = musicId;
     list->size++;
 }
+/**
+ * @fn remove_music_id(musicId_list_t *list, int index);
+ * @brief Supprime un identifiant de musique d'une liste de musiques
+ * @param list Liste de musiques
+ * @param index L'indice de la musique à supprimer
+ */
+void remove_music_id(musicId_list_t *list, int index) {
+    int i;
+    for(i = index; i < list->size - 1; i++) {
+        list->musicIds[i] = list->musicIds[i + 1];
+    }
+    list->size--;
+}
 
 /**
- * \fn void free_music_list(musicId_list_t *list);
- * \brief Libère une liste de musiques
- * \param list Liste de musiques
- * \details La liste est libérée et son pointeur est mis à NULL
- * \warning La liste doit être initialisée avant d'être libérée
-*/
+ * @fn free_music_list(musicId_list_t *list);
+ * @brief Libère la mémoire allouée pour une liste de musiques
+ * @param list Liste de musiques
+ */
 void free_music_list(musicId_list_t *list) {
     free(list->musicIds);
     list->musicIds = NULL;
@@ -335,77 +373,75 @@ void free_music_list(musicId_list_t *list) {
 }
 
 /**
- * \fn void get_music_list_from_db(musicId_list_t *list, char *rfidId);
- * \brief Récupère la liste des musiques dans la base de données
- * \param list Liste de musiques
-*/
+ * @fn get_music_list_from_db(musicId_list_t *list, char *rfidId);
+ * @brief Récupère la liste des musiques d'un utilisateur depuis la base de données
+ * @param list La liste des musiques récupérée
+ * @param rfidId L'identifiant RFID de l'utilisateur
+ * @note Si l'utilisateur n'existe pas, la liste est vide
+ */
 void get_music_list_from_db(musicId_list_t *list, char *rfidId) {
-    char filename[50];
+    char filename[255];
     sprintf(filename, "%s/%s/%s/%s", MPP_DB_FOLDER, MPP_DB_MUSIC_FOLDER, rfidId, MPP_DB_MUSIC_FILE);
-    FILE *file = fopen(filename, "r");
+    FILE *file = fopen(filename, "rb");
+
     // Si le fichier n'existe pas, on initialise la liste
     if(file == NULL) {
         init_music_list(list);
-        file = fopen(filename, "w");
-        fwrite(list, sizeof(musicId_list_t), 1, file);
+        file = fopen(filename, "wb");
+        write_list_music(list, file);
         fclose(file);
         return;
     }
-    fread(list, sizeof(musicId_list_t), 1, file);
+    read_list_music(list, file);
     fclose(file);
 }
 
 /**
- * \fn int add_music_to_db(music_t *music, char *rfidId);
- * \brief Ajoute une musique à la base de données
- * \param music Musique à ajouter
- * \param rfidId Identifiant RFID de l'utilisateur
-*/
+ * @fn add_music_to_db(music_t *music, char *rfidId);
+ * @brief Ajoute une musique à la base de données
+ * @param music La musique à ajouter
+ * @param rfidId L'identifiant RFID de l'utilisateur
+ * @return int 
+ */
 int add_music_to_db(music_t *music, char *rfidId) {
-    char filename[50];
+    char filename[255];
     sprintf(filename, "%s/%s/%s/%s", MPP_DB_FOLDER, MPP_DB_MUSIC_FOLDER, rfidId, MPP_DB_MUSIC_FILE);
-    FILE *file = fopen(filename, "w");
-    printf("Filename: %s\n", filename);
+    FILE *file = fopen(filename, "rb+");
     if(file == NULL) {
-        return -1;
+        file = fopen(filename, "wb+"); // On crée le fichier s'il n'existe pas
+        if(file == NULL) return -1;
     }
     // On écrit l'identifiant de la musique dans le fichier
     musicId_list_t list;
-    if(fread(&list, sizeof(musicId_list_t), 1, file) == 0) {
-        init_music_list(&list);
-    }
+    read_list_music(&list, file);
     int music_exists = search_music(&list, music->date.tv_sec);
-    if (music_exists == -1) {
-        printf("Music does not exist\n");
-        add_music_id(&list, music->date.tv_sec);
+    if (music_exists == -1) add_music_id(&list, music->date.tv_sec);
 
-        printf("Size: %d\n", list.size);
-    }
-    fwrite(&list, sizeof(musicId_list_t), 1, file);
+    fseek(file, 0, SEEK_SET); 
+    write_list_music(&list, file);
     fclose(file);
 
     // On écrit la musique dans un fichier séparé
     sprintf(filename, "%s/%s/%s/%ld.mipi", MPP_DB_FOLDER, MPP_DB_MUSIC_FOLDER, rfidId, music->date.tv_sec);
-    printf("Filename: %s\n", filename);
-    file = fopen(filename, "w");
-    if(file == NULL) {
-        return -1;
-    }
+    file = fopen(filename, "wb");
+
+    if(file == NULL) return -1;
+
     fwrite(music, sizeof(music_t), 1, file);
     fclose(file);
 }
 
 /**
- * \fn get_music_from_db(music_t *music, time_t musicId, char *rfidId);
- * \brief Récupère une musique de la base de données
- * \param music Musique à récupérer
- * \param musicId Identifiant de la musique à récupérer
- * \param rfidId Identifiant RFID de l'utilisateur
-*/
+ * @fn get_music_from_db(music_t *music, time_t musicId, char *rfidId);
+ * @brief Récupère une musique depuis la base de données
+ * @param music La musique récupérée
+ * @param musicId L'identifiant de la musique à récupérer
+ * @param rfidId L'identifiant RFID de l'utilisateur
+ */
 void get_music_from_db(music_t *music, time_t musicId, char *rfidId) {
-    char filename[50];
+    char filename[255];
     sprintf(filename, "%s/%s/%s/%ld.mipi", MPP_DB_FOLDER, MPP_DB_MUSIC_FOLDER, rfidId, musicId);
-    FILE *file = fopen(filename, "r");
+    FILE *file = fopen(filename, "rb");
     if(file == NULL) {
         return;
     }
@@ -415,43 +451,39 @@ void get_music_from_db(music_t *music, time_t musicId, char *rfidId) {
 }
 
 /**
- * \fn void delete_music_from_db(time_t musicId, char *rfidId);
- * \brief Supprime une musique de la base de données
- * \param musicId Identifiant de la musique à supprimer
- * \param rfidId Identifiant RFID de l'utilisateur
- * \details La musique est supprimée de la base de données
-*/
+ * @fn delete_music_from_db(time_t musicId, char *rfidId);
+ * @brief Supprime une musique de la base de données
+ * @param musicId L'identifiant de la musique à supprimer
+ * @param rfidId L'identifiant RFID de l'utilisateur
+ */
 void delete_music_from_db(time_t musicId, char *rfidId) {
-    char filename[50];
+    char filename[255];
+    musicId_list_t list;
+
     sprintf(filename, "%s/%s/%s/%ld.mipi", MPP_DB_FOLDER, MPP_DB_MUSIC_FOLDER, rfidId, musicId);
     remove(filename);
     sprintf(filename, "%s/%s/%s/%s", MPP_DB_FOLDER, MPP_DB_MUSIC_FOLDER, rfidId, MPP_DB_MUSIC_FILE);
-    FILE *file = fopen(filename, "r");
-    if(file == NULL) {
-        return;
-    }
-    char line[50];
-    FILE *temp = fopen("temp", "w");
-    while(fgets(line, 50, file) != NULL) {
-        time_t id;
-        sscanf(line, "%ld", &id);
-        if(id != musicId) {
-            fprintf(temp, "%s", line);
-        }
-    }
+    FILE *file = fopen(filename, "rb+");
+
+    if(file == NULL) return; // Si le fichier n'existe pas, on ne fait rien
+    read_list_music(&list, file);
+    int index = search_music(&list, musicId);
+    if(index == -1) return; // Si la musique n'existe pas, on ne fait rien
+    remove_music_id(&list, index);
+    fseek(file, 0, SEEK_SET);
+    write_list_music(&list, file);
     fclose(file);
-    fclose(temp);
-    remove(filename);
-    rename("temp", filename);
+    free_music_list(&list);
 }
 
 /**
- * \fn void search_music(musicId_list_t *list, time_t musicId);
- * \brief Recherche une musique dans une liste de musiques
- * \param music Musique à mettre à jour
- * \param musicId Identifiant de la musique à mettre à jour
- * \return l'indice de la musique dans la liste si elle existe, -1 sinon
-*/
+ * @fn search_music(musicId_list_t *list, time_t musicId);
+ * @brief Fonction de recherche d'une musique dans une liste
+ * @param list Liste d'identifiants de musiques
+ * @param musicId L'identifiant de la musique à rechercher
+ * @return int L'indice de la musique dans la liste, -1 si la musique n'est pas trouvée
+ * @note La liste doit être initialisée avant d'appeler cette fonction
+ */
 int search_music(musicId_list_t *list, time_t musicId) {
     int i;
     for(i = 0; i < list->size; i++) {
@@ -463,15 +495,15 @@ int search_music(musicId_list_t *list, time_t musicId) {
 }
 
 /**
- * \fn void get_username_from_db(char *username, char *rfidId);
- * \brief Récupère le nom d'utilisateur dans la base de données
- * \param username Nom de l'utilisateur
- * \param rfidId Identifiant RFID de l'utilisateur
- * \details Le nom d'utilisateur est récupéré de la base de données 
- * \note si l'utilisateur n'existe pas, le nom est égal au caractère nul
-*/
+ * @fn get_username_from_db(char *username, char *rfidId);
+ * @brief Récupère le nom d'utilisateur associé à un rfidId depuis la base de données
+ * @param username Nom d'utilisateur récupéré
+ * @param rfidId L'identifiant RFID de l'utilisateur
+ * @note Si l'utilisateur n'existe pas, username est une chaîne vide
+ * @warning La chaine username doit être allouée avant l'appel à cette fonction
+ */
 void get_username_from_db(char *username, char *rfidId) {
-    char filename[50];  
+    char filename[255];  
     sprintf(filename, "%s/%s", MPP_DB_FOLDER, MPP_DB_USER_FILE);
     FILE *file = fopen(filename, "r");
     if(file == NULL) {
@@ -480,11 +512,11 @@ void get_username_from_db(char *username, char *rfidId) {
     }
     char line[50];
     while(fgets(line, 50, file) != NULL) {
-        char id[50];
-        char name[50];
-        sscanf(line, "%s %s", id, name);
-        if(strcmp(id, rfidId) == 0) {
-            strcpy(username, name);
+        char *saveptr;
+        char *token = strtok_r(line, ":", &saveptr);
+        if(strcmp(token, rfidId) == 0) {
+            token = strtok_r(NULL, ":", &saveptr);
+            strcpy(username, token);
             fclose(file);
             return;
         }
@@ -492,13 +524,12 @@ void get_username_from_db(char *username, char *rfidId) {
 }
 
 /**
- * \fn void connect_handler(socket_t *sd, mpp_request_t *request, mpp_response_t *response);
- * \brief Gère une requête de connexion
- * \param sd Socket du client
- * \param request Requête MPP
- * \param response Réponse MPP
- * \details La réponse contient le nom de l'utilisateur
-*/
+ * @fn connect_handler(socket_t *sd, mpp_request_t *request, mpp_response_t *response);
+ * @brief Gère une requête de connexion
+ * @param sd Socket de dialogue du client
+ * @param request  Requête MPP reçue
+ * @param response Réponse MPP à envoyer
+ */
 void connect_handler(socket_t *sd, mpp_request_t *request, mpp_response_t *response) {
     // On vérifie que l'utilisateur est présent dans user.db
     get_username_from_db(response->username, request->rfidId);
@@ -510,13 +541,14 @@ void connect_handler(socket_t *sd, mpp_request_t *request, mpp_response_t *respo
 }
 
 /**
- * \fn void list_music_handler(socket_t *sd, mpp_request_t *request, mpp_response_t *response);
- * \brief Gère une requête pour lister les musiques
- * \param sd Socket du client
- * \param request Requête MPP
- * \param response Réponse MPP
- * \details La réponse contient la liste des identifiants de musiques
-*/
+ * @fn list_music_handler(socket_t *sd, mpp_request_t *request, mpp_response_t *response);
+ * @brief Gère une requête pour lister les musiques
+ * @param sd  Socket de dialogue du client
+ * @param request Requête MPP reçue
+ * @param response Réponse MPP à envoyer
+ * @note Si l'utilisateur n'existe pas, une reponse BAD_REQUEST est envoyée
+ * @warning La listes des musique doit être libérée après utilisation
+ */
 void list_music_handler(socket_t *sd, mpp_request_t *request, mpp_response_t *response) {
     // On vérifie que l'utilisateur est présent dans user.db
     get_username_from_db(response->username, request->rfidId);
@@ -531,13 +563,14 @@ void list_music_handler(socket_t *sd, mpp_request_t *request, mpp_response_t *re
 }
 
 /**
- * \fn void add_music_handler(socket_t *sd, mpp_request_t *request, mpp_response_t *response);
- * \brief Gère une requête pour ajouter une musique
- * \param sd Socket du client
- * \param request Requête MPP
- * \param response Réponse MPP
- * \details La réponse contient la musique ajoutée
-*/
+ * @fn add_music_handler(socket_t *sd, mpp_request_t *request, mpp_response_t *response);
+ * @brief Gère une requête pour ajouter une musique
+ * @param sd Socket du client
+ * @param request requête MPP reçue
+ * @param response reponse MPP à envoyer
+ * @note Un fichier est crée pour chaque musique dans le dossier de l'utilisateur
+ * @warning Si l'utilisateur n'existe pas, une reponse BAD_REQUEST est envoyée
+ */
 void add_music_handler(socket_t *sd, mpp_request_t *request, mpp_response_t *response) {
     // On vérifie que l'utilisateur est présent dans user.db
     get_username_from_db(response->username, request->rfidId);
@@ -551,13 +584,12 @@ void add_music_handler(socket_t *sd, mpp_request_t *request, mpp_response_t *res
 }
 
 /**
- * \fn void get_music_handler(socket_t *sd, mpp_request_t *request, mpp_response_t *response);
- * \brief Gère une requête pour récupérer une musique
- * \param sd Socket du client
- * \param request Requête MPP
- * \param response Réponse MPP
- * \details La réponse contient la musique récupérée
-*/
+ * @fn get_music_handler(socket_t *sd, mpp_request_t *request, mpp_response_t *response);
+ * @brief Gère une requête pour récupérer une musique
+ * @param sd  Socket de dialogue du client
+ * @param request Requête MPP reçue
+ * @param response Réponse MPP à envoyer
+ */
 void get_music_handler(socket_t *sd, mpp_request_t *request, mpp_response_t *response) {
     // On vérifie que l'utilisateur est présent dans user.db
     get_username_from_db(response->username, request->rfidId);
@@ -571,16 +603,95 @@ void get_music_handler(socket_t *sd, mpp_request_t *request, mpp_response_t *res
     response->code = MPP_RESPONSE_OK;
 }
 
+/**
+ * @fn delete_music_handler(socket_t *sd, mpp_request_t *request, mpp_response_t *response);
+ * @brief Gère une requête pour supprimer une musique
+ * @param sd  Socket de dialogue du client
+ * @param request Requête MPP reçue
+ * @param response Réponse MPP à envoyer
+ */
+void delete_music_handler(socket_t *sd, mpp_request_t *request, mpp_response_t *response) {
+    // On vérifie que l'utilisateur est présent dans user.db
+    get_username_from_db(response->username, request->rfidId);
+    if(*response->username == '\0') {
+        BAD_REQUEST(response);
+        return;
+    }
+    // On supprime la musique de la base de données
+    delete_music_from_db(request->musicId, request->rfidId);
+    response->code = MPP_RESPONSE_OK;
+}
+
+/**
+ * @fn free_request(mpp_request_t *request);
+ * @brief Libère une requête MPP
+ * @param request Requête MPP
+ */
+void free_request(mpp_request_t *request) {
+    if(request->music != NULL) free(request->music);
+    free(request);
+}
+
+/**
+ * @fn free_response(mpp_response_t *response);
+ * @brief Libère une réponse MPP
+ * @param response Réponse MPP
+ */
+void free_response(mpp_response_t *response) {
+    if(response->music != NULL) free(response->music);
+    if(response->musicIds != NULL) free_music_list(response->musicIds);
+    free(response);
+}
+
+/**
+ * @fn void create_user_directories();
+ * @brief Crée un répertoire pour les utilisateurs
+ * @note Si le fichier user.db n'existe pas, il est créé
+ */
+void create_user_directories() {
+    char folder[255];
+    char filename[255];
+    // read user.db
+    sprintf(folder, "%s/%s", MPP_DB_FOLDER, MPP_DB_USER_FILE);
+    // On vérifie que le fichier existe sinon on le crée
+    FILE *file = fopen(folder, "r");
+    if(file == NULL) {
+        file = fopen(folder, "w");
+        fclose(file);
+        return;
+    }
+    // Pour chaque ligne du fichier, on crée un répertoire
+    char line[50];
+    while(fgets(line, 50, file) != NULL) {
+        char *saveptr;
+        char *token = strtok_r(line, ":", &saveptr);
+        sprintf(folder, "%s/%s/%s", MPP_DB_FOLDER, MPP_DB_MUSIC_FOLDER, token);
+        mkdir(folder, 0777);
+    }
+    fclose(file);
+}
+
 /**********************************************************************************************************************/
 /*                                           Private Fonction Definitions                                             */
 /**********************************************************************************************************************/
 
 /**
- * \fn void serialize_music(music_t *music, buffer_t buffer);
- * \brief Sérialise une musique
- * \param music Musique à sérialiser
- * \param buffer Buffer dans lequel sérialiser la musique
-*/
+ * @fn serialize_music(music_t *music, buffer_t buffer);
+ * @brief Sérialise une musique
+ * @param music La musique à sérialiser
+ * @param buffer Le buffer dans lequel sérialiser la musique
+ * @note La musique est sérialisée de la manière suivante :
+ * <date> <bpm>
+ * <line> <noteid> <octave> <instrument> <time>
+ * ...
+ * P
+ * <line> <noteid> <octave> <instrument> <time>
+ * ...
+ * P
+ * <line> <noteid> <octave> <instrument> <time>
+ * P
+ * @warning La musique doit être initialisée avant d'appeler cette fonction
+ */
 void serialize_music(music_t *music, buffer_t buffer) {
     int i, j;
     sprintf(buffer, "%s%ld %d\n", buffer, music->date.tv_sec, music->bpm);
@@ -593,17 +704,18 @@ void serialize_music(music_t *music, buffer_t buffer) {
             }
         }
         // On marque la fin du channel
-        sprintf(buffer, "%sEND\n", buffer);
+        sprintf(buffer, "%sP\n", buffer);
     }
 }
 
 /**
- * \fn void deserialize_music(buffer_t buffer, music_t *music);
- * \brief Désérialise une musique contenue dans un buffer
- * \param music Musique à désérialiser
- * \param token position dans le buffer ou se trouve la musique sérialisée
- * \param saveptr pointeur de sauvegarde pour strtok_r
-*/
+ * @fn deserialize_music(char *token, music_t *music, char *saveptr);
+ * @brief Désérialise une musique contenue dans un buffer
+ * @param token La position dans le buffer ou se trouve la musique sérialisée
+ * @param music La musique désérialisée
+ * @param saveptr Le pointeur de sauvegarde pour strtok_r
+ * @warning La musique doit être initialisée avant d'appeler cette fonction
+ */
 void deserialize_music(char *token, music_t *music, char *saveptr) {
     int channelCount = 0;
     sscanf(token, "%ld %hd", &music->date.tv_sec, &music->bpm);
@@ -612,7 +724,7 @@ void deserialize_music(char *token, music_t *music, char *saveptr) {
         if (token != NULL) {
             int channelId = channelCount;
             channel_t *channel = &music->channels[channelId];
-            while (token != NULL && strcmp(token, "END") != 0) {
+            while (token != NULL && *token != 'P') {
                 int line = 0;
                 // on récupère d'abord la ligne
                 sscanf(token, "%d", &line);
@@ -625,3 +737,36 @@ void deserialize_music(char *token, music_t *music, char *saveptr) {
         }
     }
 }
+
+/**
+ * @fn void write_list_music(musicId_list_t *list, FILE *file);
+ * @brief Ecrit une liste d'identifiants de musiques dans un fichier
+ * @param list Liste d'identifiants de musiques
+ * @param file Le fichier dans lequel écrire la liste
+ */
+void write_list_music(musicId_list_t *list, FILE *file) {
+    int i;
+
+    int a = fwrite(&list->size, sizeof(int), 1, file);
+    for(i = 0; i < list->size; i++) {
+        a += fwrite(&list->musicIds[i], sizeof(time_t), 1, file);
+    }
+}
+
+/**
+ * @fn void read_list_music(musicId_list_t *list, FILE *file);
+ * @brief Lit une liste d'identifiants de musiques depuis un fichier
+ * @param list La liste d'identifiants de musiques
+ * @param file Le fichier depuis lequel lire la liste
+ */
+void read_list_music(musicId_list_t *list, FILE *file) {
+    init_music_list(list);
+    int size;
+    time_t musicId = 0;
+    fread(&size, sizeof(int), 1, file);
+    if(size == 0) return;
+    while(fread(&musicId, sizeof(time_t), 1, file) == 1) {
+        add_music_id(list, musicId);
+    }
+}
+
