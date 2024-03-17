@@ -1,3 +1,9 @@
+/**
+ * @file mysyscall.c
+ * @author Lukas Grando
+ * @brief Couche d'abstraction pour les appels systèmes
+ * @version 1.0
+ */
 #include "mysyscall.h"
 
 /* SECTION 1 : Gestion des signaux */
@@ -196,6 +202,7 @@ sem_t *create_sem(int value) {
  */
 void destroy_sem(sem_t *sem) {
     CHECK(sem_destroy(sem), "SEM_DESTROY");
+    free(sem);
 }
 
 /**
