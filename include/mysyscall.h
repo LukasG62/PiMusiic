@@ -1,7 +1,8 @@
 /**
- * \file syscall.h
- * \brief librairie de fonctions de manipulation d'appels systèmes
- * \version 1.0
+ * @file mysyscall.h
+ * @author Lukas Grando
+ * @brief Interface de la couche d'abstraction pour les appels systèmes
+ * @version 1.0
  */
 #ifndef __MY_SYSCALL_H__
 #define __MY_SYSCALL_H__
