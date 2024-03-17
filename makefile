@@ -81,7 +81,7 @@ $(LIB_DIR)/libinet-pc.a: $(OBJ_DIR)/data-pc.o $(OBJ_DIR)/session-pc.o $(OBJ_DIR)
 $(OBJ_DIR)/%-pc.o: $(SRC_DIR)/%.c $(INCLUDE_DIR)/%.h
 	@mkdir -p $(OBJ_DIR)
 	@echo "\t\tCompilation du fichier objet $@"
-	@gcc -o $@ -c  $< -I$(INCLUDE_DIR)
+	@gcc -o $@ -c  $< -I$(INCLUDE_DIR) -DSESSION_DEBUG -DDATA_DEBUG
 
 
 ######## FOR TARGET ########
@@ -108,7 +108,7 @@ $(LIB_DIR)/libinet-pi.a: $(OBJ_DIR)/data-pi.o $(OBJ_DIR)/session-pi.o $(OBJ_DIR)
 $(OBJ_DIR)/%-pi.o: $(SRC_DIR)/%.c $(INCLUDE_DIR)/%.h
 	@mkdir -p $(OBJ_DIR)
 	@echo "\t\tCompilation du fichier objet $@"
-	@$(CCC) -o $@ -c  $< -I$(INCLUDE_DIR)
+	@$(CCC) -o $@ -c  $< -I$(INCLUDE_DIR) -DSESSION_DEBUG -DDATA_DEBUG
 
 
 # installation rule
@@ -120,6 +120,6 @@ clean:
 	rm -rf $(OBJ_DIR)/* $(BIN_PC_DIR)/* $(BIN_RPI_DIR)/* $(LIB_DIR)/*
 
 docs:
-	doxygen Doxyfile
+	@doxygen Doxyfile 
 
 ##
