@@ -43,18 +43,22 @@
  * \fn void init_sound();
  * \brief initialise la bibliothèque 
  */
-void init_sound();
+void init_sound(snd_pcm_t *pcm);
 
 
 /**
- * \fn void play_sound();
+ * \fn void play_sound(snd_pcm_t *pcm);
  * \brief joue une note 
  * \param bpm le bpm de la musique 
  * \param note la note à jouer 
  */
 void play_note(note_t note,short bpm);
 
-
+/**
+ * \fn void end_sound(snd_pcm_t *pcm);
+ * \brief termine le pcm
+ */
+void end_sound(snd_pcm_t *pcm);
 
 
 #endif

@@ -50,14 +50,22 @@ short *triangle_wave(short *buffer, size_t sample_count, double freq);
 short *warm_wave(short *buffer, size_t sample_count, double freq);
 
 /**
+ * \fn short **silent_wave() 
+ * \brief joue une note en silence (lol)
+ * \param short *buffer buffer de short pour la note
+ * \param size_t sample_count nb d'échantillonage
+ * \param double freq fréquence d'échantillonage
+ */
+short *silent_wave(short *buffer, size_t sample_count,double freq);
+
+/**
  * \fn switch_instrument()
  * \brief joue une note sur un instrument
  * \param note_t note note à jouer
  * \param double freq frequence réelle de la note
  * \param double time durée du temps
  */
-void switch_instrument(note_t note,double freq,double time);
-
+void switch_instrument(short * buffer,note_t note,double freq,size_t time);
 
 /**
  * \fn  noteToTime()
@@ -67,7 +75,6 @@ void switch_instrument(note_t note,double freq,double time);
  * \return time temps de la note en double
  */
 double noteToTime(note_t note, short bpm);
-
 
 /**
  * \fn  noteToFreq()
@@ -82,11 +89,10 @@ double noteToFreq(note_t note);
 
 
 /**
- * \fn void init_sound();
+ * \fn void init_sound(snd_pcm_t *pcm);
  * \brief initialise la bibliothèque 
  */
-void init_sound(){
-    snd_pcm_t *pcm;
+void init_sound(snd_pcm_t *pcm){
     snd_pcm_open(&pcm, "default", SND_PCM_STREAM_PLAYBACK, 0);
     snd_pcm_hw_params_t *hw_params;
     snd_pcm_hw_params_alloca(&hw_params);
@@ -102,6 +108,15 @@ void init_sound(){
     snd_pcm_hw_params(pcm, hw_params);
 }
 
+/**
+ * \fn void end_sound(snd_pcm_t *pcm);
+ * \brief termine le pcm
+ */
+void end_sound(snd_pcm_t *pcm){
+	 snd_pcm_drain(pcm);
+    snd_pcm_close(pcm);
+}
+
 
 /**
  * \fn void play_sound()
@@ -109,19 +124,23 @@ void init_sound(){
  * \param bpm le bpm de la musique 
  * \param note la note à jouer 
  */
-void play_note(note_t note,short bpm){
+void play_note(note_t note,short bpm,short * buffer){
 	
 	
 	//fonction qui transforme un note_t en freq ( réelle )
 	double freq = noteToFreq(note);
 	
 	//calculer la durée de la note en fonction du bpm
-	double time = noteToTime(note,bpm);
+	size_t time = noteToTime(note,bpm);
 	
-	switch_instrument(note,freq,time);//on joue la note 
+	switch_instrument(note,freq,time,buffer);//on joue la note 
 	
 
-
+	for (int i = 0; i < melody_length; i++) {
+        snd_pcm_writei(pcm, samples, SAMPLE_RATE * durations[i]);
+        usleep(1000000 * durations[i]);
+    }
+	
 
 }
 
@@ -219,6 +238,20 @@ short *warm_wave(short *buffer, size_t sample_count, double freq) {
     return buffer;
 }
 
+/**
+ * \fn short **silent_wave() 
+ * \brief joue une note en silence (lol)
+ * \param short *buffer buffer de short pour la note
+ * \param size_t sample_count nb d'échantillonage
+ * \param double freq fréquence d'échantillonage
+ */
+short *silent_wave(short *buffer, size_t sample_count,double freq){
+	int i = 0;	
+    for (i = 0; i < sample_count; i++) {
+        buffer[i] = 0; // on met rien
+    }
+    return buffer;
+}
 
 /**
  * \fn switch_instrument()
@@ -228,31 +261,34 @@ short *warm_wave(short *buffer, size_t sample_count, double freq) {
  * \param double time durée du temps
  */
  //sample rate x la durée = sample_count
-void switch_instrument(note_t note,double freq,double time){
-
+void switch_instrument(short *buffer,note_t note,double freq,size_t time){
+	
+	
 	switch(note.instrument){
 		
 		case INSTRUMENT_SIN:
-			
+			sine_wave(buffer,time,freq);
 		break;
 		
 		case INSTRUMENT_SAWTOOTH:
-		
+			sawtooth_wave(buffer,time,freq);
 		break;
 		
 		case INSTRUMENT_TRIANGLE:
-		
+			triangle_wave(buffer,time,freq);
 		break;
 		
 		case INSTRUMENT_SQUARE:
-		
+			square_wave(buffer,time,freq);
+			//warm_wave(buffer,time,freq);
 		break;
 		
 		default : 
-		
+				silent_wave(buffer,time,freq);
 		break;
 		
 	}
+
 	
 }
 
@@ -274,8 +310,8 @@ double noteToFreq(note_t note){
  * \param short bpm bpm de la musique
  * \return time temps de la note en double
  */
-double noteToTime(note_t note, short bpm){
-	
+size_t noteToTime(note_t note, short bpm){
+	return SAMPLE_RATE*round((60/bpm)*(note.time/4));
 }
 
 
