@@ -22,12 +22,10 @@ void init_wiringpi(){
 	int i;
 	int button_row[] = BUTTON_ROW;
 	
-	
 	for(i=0;i<4;i++){
 		pinMode(button_row[i],INPUT);
 		pullUpDnControl (button_row[i], PUD_UP) ;
 	}
-	
 	
 	int button_col[] = BUTTON_COL;
 	for(i=0;i<3;i++){
@@ -35,16 +33,6 @@ void init_wiringpi(){
 		digitalWrite(button_col[i],HIGH);
 	}
 	
-	/*
-	//on configure le rfid
-	pinMode (RFID_MOSI, OUTPUT);
-	pinMode(RFID_MISO,INPUT);
-	pinMode(RFID_SCLK,GPIO_CLOCK);
-	pinMode( RFID_CS,OUTPUT);
-	*/
-	
-	
-
 }
 
 /**
@@ -118,42 +106,30 @@ unsigned char is_button_pressed(){
 void display_bpm(int bpm){
 	int digits [] = {0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F};
 
-	
 	//on initialise I2C
 	int fd = wiringPiI2CSetup (SEVEN_SEGMENT_ADDR) ;
 	
-
-	
 	//on allume l'horloge
 	wiringPiI2CWriteReg16(fd,0x2,0x01);
-	
 	//on configure int/row
 	wiringPiI2CWriteReg16(fd,0xA,0x00);
-	
 	//on allume l'écran 
 	wiringPiI2CWriteReg16(fd,0x8,0x01);
-	
 	//on configure l'intensité
 	wiringPiI2CWriteReg16(fd,0xE,0x01);
-	
-	
-	//on écrit 2 à l'adresse 0
+	//X---
 	wiringPiI2CWriteReg16(fd,0x0,(digits[bpm/1000]));//premier digit
 	bpm = bpm%1000;
-	
+	//-X--
 	wiringPiI2CWriteReg16(fd,0x2,(digits[bpm/100]));//deuxième digit
 	bpm =bpm%100;
-	
-	//2points
+
 	wiringPiI2CWriteReg16(fd,0x4,0x00);
-	
+	//--X-
 	wiringPiI2CWriteReg16(fd,0x6,(digits[bpm/10]));//troisème digit
 	bpm =bpm%10;
-	
+	//---X
 	wiringPiI2CWriteReg16(fd,0x8,(digits[bpm/1]));
-	
-	
-	
 	close(fd);
 }
 
@@ -162,8 +138,6 @@ void display_bpm(int bpm){
  * \brief lis la valeur du badge rfid
  */
 char * read_rfid(char * tagRfid){
-	
-	
 	//on configure le rfid
 	pinMode (RFID_MOSI, OUTPUT);
 	pinMode(RFID_MISO,INPUT);
@@ -202,15 +176,10 @@ int read_proximity_captor(){
 		gettimeofday(&dateFin, NULL);
 	}
 	
-	
 	uint64_t delta_us = (dateFin.tv_sec - dateDebut.tv_sec) * 1000000 + (dateFin.tv_usec - dateDebut.tv_usec) / 1000;
-	
-
 	int distance = round(delta_us*17150*100.0)/100.0;
-
 	if( distance == 0 )
 		return 1;
 	else 
-		return 0;	
-	
+		return 0;
 }
