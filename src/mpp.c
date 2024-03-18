@@ -156,7 +156,7 @@ void serialize_mpp_request(mpp_request_t *request, buffer_t buffer) {
 void deserialize_mpp_request(buffer_t buffer, mpp_request_t *request) {
     // strtok n'est pas thread safe, on utilise strtok_r donc pour cela on doit déclarer un pointeur saveptr
     char *saveptr = NULL;
-    int i, j;
+    int i;
     if(strlen(buffer) == 0) BAD_REQUEST(request);
     // lecture de la première ligne
     char *token = strtok_r(buffer, "\n", &saveptr);
@@ -210,7 +210,7 @@ void deserialize_mpp_response(buffer_t buffer, mpp_response_t *response) {
     // strtok n'est pas thread safe, on utilise strtok_r donc pour cela on doit déclarer un pointeur saveptr
     // TODO : robustesse !!
     char *saveptr = NULL;
-    int i, j;
+    int i;
     // lecture de la première ligne
     char *token = strtok_r(buffer, "\n", &saveptr);
     if(token == NULL) BAD_REQUEST(response);
@@ -429,6 +429,7 @@ int add_music_to_db(music_t *music, char *rfidId) {
 
     fwrite(music, sizeof(music_t), 1, file);
     fclose(file);
+    return 1;
 }
 
 /**
@@ -650,7 +651,6 @@ void free_response(mpp_response_t *response) {
  */
 void create_user_directories() {
     char folder[255];
-    char filename[255];
     // read user.db
     sprintf(folder, "%s/%s", MPP_DB_FOLDER, MPP_DB_USER_FILE);
     // On vérifie que le fichier existe sinon on le crée
