@@ -15,19 +15,25 @@
 #include <alsa/asoundlib.h>
 #include <unistd.h> 
 #include "note.h"
+
 /* ------------------------------------------------------------------------ */
 /*              C O N S T A N T E S     S Y M B O L I Q U E S               */
 /* ------------------------------------------------------------------------ */
 
 #define SAMPLE_RATE 48000
-#define BASE_AMPLITUDE 8000
+#define BASE_AMPLITUDE 10000
 
 /* ------------------------------------------------------------------------ */
 /*                    M A C R O    F O N C T I O N S                        */
 /* ------------------------------------------------------------------------ */
 
-
-
+#define CHECK(sts, msg) \
+    if ((sts) != 0)    \
+    {         			\
+        perror(msg);    \
+        				\
+        exit(-1);       \
+    }
 
 /* ------------------------------------------------------------------------ */
 /*              D É F I N I T I O N S   D E   T Y P E S                     */
@@ -43,7 +49,7 @@
  * \fn void init_sound();
  * \brief initialise la bibliothèque 
  */
-void init_sound(snd_pcm_t *pcm);
+void init_sound(snd_pcm_t **pcm);
 
 
 /**
@@ -52,7 +58,7 @@ void init_sound(snd_pcm_t *pcm);
  * \param bpm le bpm de la musique 
  * \param note la note à jouer 
  */
-void play_note(note_t note,short bpm);
+void play_note(note_t note,short bpm,snd_pcm_t *pcm);
 
 /**
  * \fn void end_sound(snd_pcm_t *pcm);

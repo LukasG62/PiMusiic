@@ -74,7 +74,7 @@ void switch_instrument(short * buffer,note_t note,double freq,size_t time);
  * \param short bpm bpm de la musique
  * \return time temps de la note en double
  */
-double noteToTime(note_t note, short bpm);
+size_t noteToTime(note_t note, short bpm);
 
 /**
  * \fn  noteToFreq()
@@ -83,6 +83,14 @@ double noteToTime(note_t note, short bpm);
  * \return frequence de la note en double
  */
 double noteToFreq(note_t note);
+
+/**
+ * \fn  pdt_convolution()
+ * \brief fait un pdt de convolution entre buffer1 et 2 et écrase le buffer 1
+ * \param 
+ * \return le pointeur sur le buffer résultat
+ */
+short * pdt_convolution(short * buffer1,short * buffer2,size_t time);
 /* ------------------------------------------------------------------------ */
 /*                  C O D E    D E S    F O N C T I O N S                   */
 /* ------------------------------------------------------------------------ */
@@ -92,20 +100,22 @@ double noteToFreq(note_t note);
  * \fn void init_sound(snd_pcm_t *pcm);
  * \brief initialise la bibliothèque 
  */
-void init_sound(snd_pcm_t *pcm){
-    snd_pcm_open(&pcm, "default", SND_PCM_STREAM_PLAYBACK, 0);
+void init_sound(snd_pcm_t **pcm){
+
+    snd_pcm_open(pcm, "default", SND_PCM_STREAM_PLAYBACK, 0);
     snd_pcm_hw_params_t *hw_params;
     snd_pcm_hw_params_alloca(&hw_params);
 
-    snd_pcm_hw_params_any(pcm, hw_params);
-    snd_pcm_hw_params_set_access(pcm, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED);
-    snd_pcm_hw_params_set_format(pcm, hw_params, SND_PCM_FORMAT_S16_LE);
-    snd_pcm_hw_params_set_channels(pcm, hw_params, 1);
-    snd_pcm_hw_params_set_rate(pcm, hw_params, SAMPLE_RATE, 0);
-    snd_pcm_hw_params_set_periods(pcm, hw_params, 10, 0);
-    snd_pcm_hw_params_set_period_time(pcm, hw_params, 100000, 0); // durée de la musique
+    snd_pcm_hw_params_any(*pcm, hw_params);
+    snd_pcm_hw_params_set_access(*pcm, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED);
+    snd_pcm_hw_params_set_format(*pcm, hw_params, SND_PCM_FORMAT_S16_LE);
+    snd_pcm_hw_params_set_channels(*pcm, hw_params, 1);
+    snd_pcm_hw_params_set_rate(*pcm, hw_params, 48000, 0);
+    snd_pcm_hw_params_set_periods(*pcm, hw_params, 10, 0);
+    snd_pcm_hw_params_set_period_time(*pcm, hw_params, 100000, 0); // 0.1 seconds
 
-    snd_pcm_hw_params(pcm, hw_params);
+    snd_pcm_hw_params(*pcm, hw_params);
+    
 }
 
 /**
@@ -124,7 +134,7 @@ void end_sound(snd_pcm_t *pcm){
  * \param bpm le bpm de la musique 
  * \param note la note à jouer 
  */
-void play_note(note_t note,short bpm,short * buffer){
+void play_note(note_t note,short bpm,snd_pcm_t *pcm){
 	
 	
 	//fonction qui transforme un note_t en freq ( réelle )
@@ -133,13 +143,14 @@ void play_note(note_t note,short bpm,short * buffer){
 	//calculer la durée de la note en fonction du bpm
 	size_t time = noteToTime(note,bpm);
 	
-	switch_instrument(note,freq,time,buffer);//on joue la note 
+	short * buffer = (short*)malloc(sizeof(short)*time);
+	
+	switch_instrument(buffer,note,freq,time);//on joue la note 
 	
 
-	for (int i = 0; i < melody_length; i++) {
-        snd_pcm_writei(pcm, samples, SAMPLE_RATE * durations[i]);
-        usleep(1000000 * durations[i]);
-    }
+        snd_pcm_writei(pcm, buffer, time);
+        //usleep(1000000 * durations[i]);
+
 	
 
 }
@@ -172,7 +183,7 @@ short *square_wave(short *buffer, size_t sample_count, double freq) {
 	int cycle_index = 0;
 	int i = 0;
 	for (i = 0; i < sample_count; i++) {
-		buffer[i] = cycle_index < samples_half_cycle ? 10000 : -10000;
+		buffer[i] = cycle_index < samples_half_cycle ? BASE_AMPLITUDE : -BASE_AMPLITUDE;
 		cycle_index = (cycle_index + 1) % samples_full_cycle;
 	}
 	return buffer;
@@ -271,7 +282,7 @@ void switch_instrument(short *buffer,note_t note,double freq,size_t time){
 		break;
 		
 		case INSTRUMENT_SAWTOOTH:
-			sawtooth_wave(buffer,time,freq);
+			warm_wave(buffer,time,freq);
 		break;
 		
 		case INSTRUMENT_TRIANGLE:
@@ -280,7 +291,6 @@ void switch_instrument(short *buffer,note_t note,double freq,size_t time){
 		
 		case INSTRUMENT_SQUARE:
 			square_wave(buffer,time,freq);
-			//warm_wave(buffer,time,freq);
 		break;
 		
 		default : 
@@ -299,7 +309,8 @@ void switch_instrument(short *buffer,note_t note,double freq,size_t time){
  * \return frequence de la note en double
  */
 double noteToFreq(note_t note){
-	return pow(note.frequency,note.octave-3);
+	return note.frequency * pow(2,(double)note.octave-3);
+	//return note.frequency;
 }
 
 
@@ -311,9 +322,33 @@ double noteToFreq(note_t note){
  * \return time temps de la note en double
  */
 size_t noteToTime(note_t note, short bpm){
-	return SAMPLE_RATE*round((60/bpm)*(note.time/4));
+	return round(SAMPLE_RATE*(60.0/bpm)*(note.time/4.0));
 }
 
+/**
+ * \fn  pdt_convolution()
+ * \brief fait un pdt de convolution entre buffer1 et 2 et écrase le buffer 1
+ * \param 
+ * \return le pointeur sur le buffer résultat
+ */
+short * pdt_convolution(short * buffer1,short * buffer2,size_t time){
+	int i,j = 0;
+	short * buffer = (short*)malloc(sizeof(short)*time);
+	for(i=0;i<time;i++){
+		//la valeur de notre t
+		short somme = 0;
+		for(j=0;j<time;j++){
+			if(i>=j)
+				somme=buffer1[j]*buffer[i-j]+somme;
+		}
+		if(somme<BASE_AMPLITUDE)
+			buffer[i]=somme;
+		else
+			buffer[i]=BASE_AMPLITUDE;
+	}	
 
+	return buffer; 
+}
+/* ------------------------------------------------------------------------ */
 
 
