@@ -351,3 +351,29 @@ size_t i,j;
     free(buffer); // Libérer la mémoire allouée pour le buffer temporaire
     return buffer1; // Retourner buffer1 modifié
 }
+
+
+void play_sample(char * fic,snd_pcm_t *pcm){
+	
+	
+FILE *f = fopen(fic, "rb");
+fseek(f, 0, SEEK_END);
+long file_size = ftell(f);
+fseek(f, 0, SEEK_SET);
+short *samples = (short*)malloc(file_size);
+fread(samples, 1, file_size, f);
+fclose(f);
+
+snd_pcm_writei(pcm, samples, SAMPLE_RATE);
+
+free(samples);
+
+}
+
+
+
+
+
+
+
+

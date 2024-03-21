@@ -67,4 +67,10 @@ void play_note(note_t note,short bpm,snd_pcm_t *pcm);
 void end_sound(snd_pcm_t *pcm);
 
 
+/**
+ * \fn  play_sample(FILE *f,snd_pcm_t *pcm);
+ * \brief joue un sample
+ */
+void play_sample(char * fic,snd_pcm_t *pcm);
+
 #endif
