@@ -331,24 +331,23 @@ size_t noteToTime(note_t note, short bpm){
  * \param 
  * \return le pointeur sur le buffer résultat
  */
-short * pdt_convolution(short * buffer1,short * buffer2,size_t time){
-	int i,j = 0;
-	short * buffer = (short*)malloc(sizeof(short)*time);
-	for(i=0;i<time;i++){
-		//la valeur de notre t
-		short somme = 0;
-		for(j=0;j<time;j++){
-			if(i>=j)
-				somme=buffer1[j]*buffer[i-j]+somme;
-		}
-		if(somme<BASE_AMPLITUDE)
-			buffer[i]=somme;
-		else
-			buffer[i]=BASE_AMPLITUDE;
-	}	
+short * pdt_convolution(short * buffer1, short * buffer2, size_t time) {
+    short * buffer = (short*)malloc(sizeof(short) * time);
+size_t i,j;
+    for ( i = 0; i < time; ++i) {
+        short somme = 0;
+        for ( j = i; j < time; ++j) {
+            somme += buffer1[j] * buffer2[j - i];
+        }
+        buffer[i] = (somme < BASE_AMPLITUDE) ? (somme > -BASE_AMPLITUDE) ? somme : -BASE_AMPLITUDE : BASE_AMPLITUDE;
+        
+    }
 
-	return buffer; 
+    for ( i = 0; i < time; ++i) {
+        buffer1[i] = buffer[i];
+        printf("%d\n",buffer[i]);
+    }
+	getchar();
+    free(buffer); // Libérer la mémoire allouée pour le buffer temporaire
+    return buffer1; // Retourner buffer1 modifié
 }
-/* ------------------------------------------------------------------------ */
-
-

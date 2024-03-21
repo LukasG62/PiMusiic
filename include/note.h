@@ -84,8 +84,8 @@ typedef enum {
 	TIME_CROCHE_DOUBLE = 1,/*!< elle vaut ¼ temps*/
 	TIME_CROCHE = 2,/*!< elle vaut ½ temps*/
 	TIME_NOIRE = 4,/*!< Valeur par défaut, elle vaut 1 temps*/
-	TIME_BLANCHE = 6,/*!< elle vaut 2 temps*/
-	TIME_RONDE = 8,/*!< elle vaut 4 temps*/
+	TIME_BLANCHE = 8,/*!< elle vaut 2 temps*/
+	TIME_RONDE = 16,/*!< elle vaut 4 temps*/
 	TIME_END = 10 /*!< Valeur de fin de la liste*/
 
 }time_duration_t;

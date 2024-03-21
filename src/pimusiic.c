@@ -3,25 +3,604 @@
  * \details Application principale
 */
 #include "sound.h"
+#include <pthread.h>
+note_t melodie [52];
+note_t melodie2[52];
+note_t basse [52];
+note_t basse_blank[13];
+note_t solo [86];
+note_t solo2[50];
+note_t pont[55];
+note_t pont2[55];
+note_t transition[8];
+
+
+
+
+snd_pcm_t *pcm1 = NULL;
+snd_pcm_t *pcm2 = NULL;
+snd_pcm_t *pcm3 = NULL;
+short bpm = 150;
+
+void *play_melody(){
+int j,i,g;
+init_sound(&pcm1);
+for( j=0;j<3;j++){
+	for( i=0;i<52;i++){
+		play_note(melodie[i],bpm,pcm1);
+	}
+	
+	
+}	
+	for( i=0;i<86;i++){
+			play_note(solo[i],bpm,pcm1);
+		}
+	for( g=0;g<2;g++){
+	for( i=0;i<55;i++){
+			play_note(pont[i],bpm,pcm1);
+		}}
+		
+	for( i=0;i<8;i++){
+	play_note(transition[i],bpm,pcm1);
+	}
+	for( j=0;j<3;j++){
+	for( i=0;i<52;i++){
+		play_note(melodie[i],bpm,pcm1);
+	}
+}
+	end_sound(pcm1);
+}
+
+void *play_2melody(){
+int j,i,g;
+init_sound(&pcm3);
+	for ( g=0;g<8;g++){
+		for( i=0;i<13;i++){
+			play_note(basse_blank[i],bpm,pcm3);
+		}		
+	}
+	
+for( i=0;i<52;i++){
+		play_note(melodie2[i],bpm,pcm3);
+	}
+	for ( g=0;g<4;g++){
+		for( i=0;i<13;i++){
+			play_note(basse_blank[i],bpm,pcm3);
+		}		
+	}
+	for( g=0;g<50;g++){
+	play_note(solo2[g],bpm,pcm3);
+	}
+	for( g=0;g<2;g++){
+	for( i=0;i<55;i++){
+			play_note(pont2[i],bpm,pcm3);
+		}}
+		for ( g=0;g<4;g++){
+		for( i=0;i<13;i++){
+			play_note(basse_blank[i],bpm,pcm3);
+		}		
+	}
+	for( i=0;i<52;i++){
+		play_note(melodie2[i],bpm,pcm3);
+	}	
+		
+		end_sound(pcm3);
+}
+
+void *play_basse(){
+int j,i,g;
+	init_sound(&pcm2);
+	for ( g=0;g<4;g++){
+		for( i=0;i<13;i++){
+			play_note(basse_blank[i],bpm,pcm2);
+		}		
+	}
+	for( j=0;j<10;j++){
+		for( i=0;i<52;i++){
+			play_note(basse[i],bpm,pcm2);
+		}	
+	}
+	end_sound(pcm2);
+}
+
+
+
 
 int main() {
-	note_t melodie [8];
-	melodie[0] = create_note(1, NOTE_C_FQ, 2,INSTRUMENT_TRIANGLE, TIME_NOIRE);
-	melodie[1] = create_note(2, NOTE_D_FQ, 3,INSTRUMENT_TRIANGLE, TIME_NOIRE);
-	melodie[2] = create_note(3, NOTE_E_FQ, 3,INSTRUMENT_TRIANGLE, TIME_NOIRE);
-	melodie[3] = create_note(4, NOTE_F_FQ, 2,INSTRUMENT_TRIANGLE, TIME_NOIRE);
-	melodie[4] = create_note(5, NOTE_G_FQ, 3,INSTRUMENT_TRIANGLE, TIME_NOIRE);
-	melodie[5] = create_note(6, NOTE_A_FQ, 3,INSTRUMENT_TRIANGLE, TIME_NOIRE);
-	melodie[6] = create_note(7, NOTE_B_FQ, 3,INSTRUMENT_TRIANGLE, TIME_NOIRE);
-	melodie[7] = create_note(8, NOTE_C_FQ, 4,INSTRUMENT_TRIANGLE, TIME_NOIRE);
+
+	// main mélodie 
 	
-	snd_pcm_t *pcm = NULL;
-	init_sound(&pcm);
-	short bpm = 60;
-	for(int i=0;i<8;i++){
-		play_note(melodie[i],bpm,pcm);
-	}
-	end_sound(pcm);
+	melodie[0] = create_note(1, NOTE_D_FQ, 3,INSTRUMENT_SQUARE,TIME_CROCHE_DOUBLE);
+	melodie[1] = create_note(2, NOTE_D_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie[2] = create_note(3, NOTE_D_FQ, 4,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie[3] = create_note(4, NOTE_A_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie[4] = create_note(5, NOTE_NA_FQ, 3,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie[5] = create_note(6, NOTE_GS_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie[6] = create_note(7, NOTE_NA_FQ, 3,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie[7] = create_note(8, NOTE_G_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie[8] = create_note(8, NOTE_NA_FQ, 3,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie[9] = create_note(8, NOTE_F_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie[10] = create_note(8, NOTE_D_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie[11] = create_note(8, NOTE_F_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie[12] = create_note(8, NOTE_G_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	
+	melodie[13] = create_note(1, NOTE_C_FQ, 3,INSTRUMENT_SQUARE,TIME_CROCHE_DOUBLE);
+	melodie[14] = create_note(2, NOTE_C_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie[15] = create_note(3, NOTE_D_FQ, 4,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie[16] = create_note(4, NOTE_A_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie[17] = create_note(5, NOTE_NA_FQ, 3,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie[18] = create_note(6, NOTE_GS_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie[19] = create_note(7, NOTE_NA_FQ, 3,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie[20] = create_note(8, NOTE_G_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie[21] = create_note(8, NOTE_NA_FQ, 3,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie[22] = create_note(8, NOTE_F_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie[23] = create_note(8, NOTE_D_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie[24] = create_note(8, NOTE_F_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie[25] = create_note(8, NOTE_G_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	
+	melodie[26] = create_note(1, NOTE_B_FQ, 2,INSTRUMENT_SQUARE,TIME_CROCHE_DOUBLE);
+	melodie[27] = create_note(2, NOTE_B_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie[28] = create_note(3, NOTE_D_FQ, 4,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie[29] = create_note(4, NOTE_A_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie[30] = create_note(5, NOTE_NA_FQ, 3,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie[31] = create_note(6, NOTE_GS_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie[32] = create_note(7, NOTE_NA_FQ, 3,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie[33] = create_note(8, NOTE_G_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie[34] = create_note(8, NOTE_NA_FQ, 3,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie[35] = create_note(8, NOTE_F_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie[36] = create_note(8, NOTE_D_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie[37] = create_note(8, NOTE_F_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie[38] = create_note(8, NOTE_G_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	
+	melodie[39] = create_note(1, NOTE_AS_FQ, 2,INSTRUMENT_SQUARE,TIME_CROCHE_DOUBLE);
+	melodie[40] = create_note(2, NOTE_AS_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie[41] = create_note(3, NOTE_D_FQ, 4,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie[42] = create_note(4, NOTE_A_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie[43] = create_note(5, NOTE_NA_FQ, 3,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie[44] = create_note(6, NOTE_GS_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie[45] = create_note(7, NOTE_NA_FQ, 3,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie[46] = create_note(8, NOTE_G_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie[47] = create_note(8, NOTE_NA_FQ, 3,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie[48] = create_note(8, NOTE_F_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie[49] = create_note(8, NOTE_D_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie[50] = create_note(8, NOTE_F_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie[51] = create_note(8, NOTE_G_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	
+	//2melodie
+	melodie2[0] = create_note(1, NOTE_D_FQ, 2,INSTRUMENT_SQUARE,TIME_CROCHE_DOUBLE);
+	melodie2[1] = create_note(2, NOTE_D_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie2[2] = create_note(3, NOTE_D_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie2[3] = create_note(4, NOTE_A_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie2[4] = create_note(5, NOTE_NA_FQ, 2,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie2[5] = create_note(6, NOTE_GS_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie2[6] = create_note(7, NOTE_NA_FQ, 2,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie2[7] = create_note(8, NOTE_G_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie2[8] = create_note(8, NOTE_NA_FQ, 2,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie2[9] = create_note(8, NOTE_F_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie2[10] = create_note(8, NOTE_D_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie2[11] = create_note(8, NOTE_F_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie2[12] = create_note(8, NOTE_G_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	
+	melodie2[13] = create_note(1, NOTE_C_FQ, 2,INSTRUMENT_SQUARE,TIME_CROCHE_DOUBLE);
+	melodie2[14] = create_note(2, NOTE_C_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie2[15] = create_note(3, NOTE_D_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie2[16] = create_note(4, NOTE_A_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie2[17] = create_note(5, NOTE_NA_FQ, 2,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie2[18] = create_note(6, NOTE_GS_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie2[19] = create_note(7, NOTE_NA_FQ, 2,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie2[20] = create_note(8, NOTE_G_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie2[21] = create_note(8, NOTE_NA_FQ, 2,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie2[22] = create_note(8, NOTE_F_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie2[23] = create_note(8, NOTE_D_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie2[24] = create_note(8, NOTE_F_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie2[25] = create_note(8, NOTE_G_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	
+	melodie2[26] = create_note(1, NOTE_B_FQ, 1,INSTRUMENT_SQUARE,TIME_CROCHE_DOUBLE);
+	melodie2[27] = create_note(2, NOTE_B_FQ, 1,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie2[28] = create_note(3, NOTE_D_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie2[29] = create_note(4, NOTE_A_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie2[30] = create_note(5, NOTE_NA_FQ, 2,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie2[31] = create_note(6, NOTE_GS_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie2[32] = create_note(7, NOTE_NA_FQ, 2,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie2[33] = create_note(8, NOTE_G_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie2[34] = create_note(8, NOTE_NA_FQ, 2,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie2[35] = create_note(8, NOTE_F_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie2[36] = create_note(8, NOTE_D_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie2[37] = create_note(8, NOTE_F_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie2[38] = create_note(8, NOTE_G_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	
+	melodie2[39] = create_note(1, NOTE_AS_FQ, 1,INSTRUMENT_SQUARE,TIME_CROCHE_DOUBLE);
+	melodie2[40] = create_note(2, NOTE_AS_FQ, 1,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie2[41] = create_note(3, NOTE_D_FQ, 3,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie2[42] = create_note(4, NOTE_A_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie2[43] = create_note(5, NOTE_NA_FQ, 2,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie2[44] = create_note(6, NOTE_GS_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie2[45] = create_note(7, NOTE_NA_FQ, 2,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie2[46] = create_note(8, NOTE_G_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie2[47] = create_note(8, NOTE_NA_FQ, 2,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	melodie2[48] = create_note(8, NOTE_F_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE);
+	melodie2[49] = create_note(8, NOTE_D_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie2[50] = create_note(8, NOTE_F_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+	melodie2[51] = create_note(8, NOTE_G_FQ, 2,INSTRUMENT_SQUARE, TIME_CROCHE_DOUBLE);
+
+	//solo
+	solo[0] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo[1] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[2] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[3] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo[4] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[5] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo[6] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo[7] = create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[8] = create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[9] = create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[10] = create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_NOIRE);
+
+	solo[11] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo[12] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[13] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[14] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo[15] = create_note(1, NOTE_G_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[16] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo[17] = create_note(1, NOTE_GS_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo[18] = create_note(1, NOTE_GS_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[19] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[20] = create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[21] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[22] = create_note(1, NOTE_G_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[23] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE);
+	
+	solo[24] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo[25] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[26] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[27] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo[28] = create_note(1, NOTE_G_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[29] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo[30] = create_note(1, NOTE_GS_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo[31] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo[32] = create_note(1, NOTE_A_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo[33] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo[34] = create_note(1, NOTE_C_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[35] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo[36] = create_note(1, NOTE_A_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo[37] = create_note(1, NOTE_A_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	
+	solo[38] = create_note(1, NOTE_D_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo[39] = create_note(1, NOTE_D_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo[40] = create_note(1, NOTE_D_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[41] = create_note(1, NOTE_A_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[42] = create_note(1, NOTE_D_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[43] = create_note(1, NOTE_C_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[44] = create_note(1, NOTE_C_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_BLANCHE);
+	
+	//suite solo
+	solo[45] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo[46] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[47] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[48] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo[49] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[50] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo[51] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo[52] = create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[53] = create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[54] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo[55] = create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_NOIRE);
+
+	solo[56] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo[57] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[58] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[59] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo[60] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[61] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo[62] = create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[63] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo[64] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[65] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo[66] = create_note(1, NOTE_D_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[67] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo[68] = create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[69] = create_note(1, NOTE_C_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	
+	solo[70] = create_note(1, NOTE_D_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo[71] = create_note(1, NOTE_A_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo[72] = create_note(1, NOTE_G_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo[73] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo[74] = create_note(1, NOTE_C_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo[75] = create_note(1, NOTE_G_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo[76] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo[77] = create_note(1, NOTE_E_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	
+	solo[78] = create_note(1, NOTE_B_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo[79] = create_note(1, NOTE_C_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[80] = create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[81] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo[82] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[83] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo[84] = create_note(1, NOTE_C_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo[85] = create_note(1, NOTE_C_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_BLANCHE);
+	
+	
+	//solo2
+	solo2[1] = create_note(1, NOTE_A_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo2[2] = create_note(1, NOTE_A_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[3] = create_note(1, NOTE_A_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[4] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo2[5] = create_note(1, NOTE_A_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[6] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo2[7] = create_note(1, NOTE_A_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo2[8] = create_note(1, NOTE_G_FQ, 3,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[9] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo2[10] = create_note(1, NOTE_G_FQ, 3,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[11] = create_note(1, NOTE_G_FQ, 3,INSTRUMENT_SAWTOOTH,TIME_NOIRE);
+
+	solo2[12] = create_note(1, NOTE_A_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo2[13] = create_note(1, NOTE_A_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[14] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[15] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo2[16] = create_note(1, NOTE_A_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[17] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo2[18] = create_note(1, NOTE_G_FQ, 3,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[19] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo2[20] = create_note(1, NOTE_A_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[21] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo2[22] = create_note(1, NOTE_E_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[23] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo2[24] = create_note(1, NOTE_A_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[25] = create_note(1, NOTE_G_FQ, 3,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	
+	solo2[26] = create_note(1, NOTE_B_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[27] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[28] = create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[29] = create_note(1, NOTE_E_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[30] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[31] = create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[32] = create_note(1, NOTE_B_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[33] = create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[34] = create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[35] = create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[36] = create_note(1, NOTE_B_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[37] = create_note(1, NOTE_E_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[38] = create_note(1, NOTE_B_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[39] = create_note(1, NOTE_G_FQ, 3,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[40] = create_note(1, NOTE_B_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[41] = create_note(1, NOTE_G_FQ, 3,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	
+	solo2[42] = create_note(1, NOTE_F_FQ, 3,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	solo2[43] = create_note(1, NOTE_A_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[44] = create_note(1, NOTE_B_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[45] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo2[46] = create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[47] = create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	solo2[48] = create_note(1, NOTE_E_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	solo2[49] = create_note(1, NOTE_E_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_BLANCHE);
+	
+	//pont 
+	pont[0]=create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_BLANCHE);
+	pont[1]=create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[2]=create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[3]=create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[4]=create_note(1, NOTE_G_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[5]=create_note(1, NOTE_GS_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[6]=create_note(1, NOTE_G_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[7]=create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[8]=create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	
+	pont[9]=create_note(1, NOTE_GS_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[10]=create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[11]=create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont[12]=create_note(1, NOTE_G_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_BLANCHE);
+	pont[13]=create_note(1, NOTE_G_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[14]=create_note(1, NOTE_GS_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont[15]=create_note(1, NOTE_A_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	
+	pont[16]=create_note(1, NOTE_C_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont[17]=create_note(1, NOTE_A_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[18]=create_note(1, NOTE_GS_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[19]=create_note(1, NOTE_G_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[20]=create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[21]=create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[22]=create_note(1, NOTE_E_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[23]=create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont[24]=create_note(1, NOTE_G_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont[25]=create_note(1, NOTE_A_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont[26]=create_note(1, NOTE_C_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	
+	pont[27]=create_note(1, NOTE_CS_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont[28]=create_note(1, NOTE_GS_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont[29]=create_note(1, NOTE_GS_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[30]=create_note(1, NOTE_G_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[31]=create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[32]=create_note(1, NOTE_G_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[33]=create_note(1, NOTE_G_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_BLANCHE);
+	
+	pont[34]=create_note(1, NOTE_F_FQ, 3,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont[35]=create_note(1, NOTE_G_FQ, 3,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont[36]=create_note(1, NOTE_A_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont[37]=create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont[38]=create_note(1, NOTE_E_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_NOIRE);
+	pont[39]=create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_NOIRE);
+	
+	pont[40]=create_note(1, NOTE_E_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_NOIRE);
+	pont[41]=create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_NOIRE);
+	pont[42]=create_note(1, NOTE_G_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_NOIRE);
+	pont[43]=create_note(1, NOTE_E_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_NOIRE);
+	
+	pont[44]=create_note(1, NOTE_A_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_BLANCHE);
+	pont[45]=create_note(1, NOTE_A_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[46]=create_note(1, NOTE_GS_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[47]=create_note(1, NOTE_G_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[48]=create_note(1, NOTE_FS_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[49]=create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[50]=create_note(1, NOTE_E_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[51]=create_note(1, NOTE_DS_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont[52]=create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	
+	pont[53]=create_note(1, NOTE_CS_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_BLANCHE);
+	pont[54]=create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_BLANCHE);
+	
+	//pont 2
+	pont2[0]=create_note(1, NOTE_NA_FQ, 4,INSTRUMENT_NA,TIME_BLANCHE);
+	pont2[1]=create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[2]=create_note(1, NOTE_AS_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[3]=create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[4]=create_note(1, NOTE_G_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[5]=create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[6]=create_note(1, NOTE_E_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[7]=create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[8]=create_note(1, NOTE_AS_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	
+	pont2[9]=create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[10]=create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[11]=create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont2[12]=create_note(1, NOTE_A_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_BLANCHE);
+	pont2[13]=create_note(1, NOTE_A_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[14]=create_note(1, NOTE_E_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont2[15]=create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	
+	pont2[16]=create_note(1, NOTE_A_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont2[17]=create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[18]=create_note(1, NOTE_GS_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[19]=create_note(1, NOTE_E_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[20]=create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[21]=create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[22]=create_note(1, NOTE_E_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[23]=create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont2[24]=create_note(1, NOTE_E_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont2[25]=create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont2[26]=create_note(1, NOTE_A_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	
+	pont2[27]=create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont2[28]=create_note(1, NOTE_CS_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont2[29]=create_note(1, NOTE_CS_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[30]=create_note(1, NOTE_G_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[31]=create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[32]=create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[33]=create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_BLANCHE);
+	
+	pont2[34]=create_note(1, NOTE_AS_FQ, 3,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont2[35]=create_note(1, NOTE_C_FQ, 3,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont2[36]=create_note(1, NOTE_D_FQ, 3,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont2[37]=create_note(1, NOTE_A_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE);
+	pont2[38]=create_note(1, NOTE_G_FQ, 3,INSTRUMENT_SAWTOOTH,TIME_NOIRE);
+	pont2[39]=create_note(1, NOTE_F_FQ, 3,INSTRUMENT_SAWTOOTH,TIME_NOIRE);
+	
+	pont2[40]=create_note(1, NOTE_A_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_NOIRE);
+	pont2[41]=create_note(1, NOTE_B_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_NOIRE);
+	pont2[42]=create_note(1, NOTE_C_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_NOIRE);
+	pont2[43]=create_note(1, NOTE_A_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_NOIRE);
+	
+	pont2[44]=create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_BLANCHE);
+	pont2[45]=create_note(1, NOTE_A_FQ, 5,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[46]=create_note(1, NOTE_GS_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[47]=create_note(1, NOTE_G_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[48]=create_note(1, NOTE_FS_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[49]=create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[50]=create_note(1, NOTE_E_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[51]=create_note(1, NOTE_DS_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	pont2[52]=create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_CROCHE_DOUBLE);
+	
+	pont2[53]=create_note(1, NOTE_F_FQ, 3,INSTRUMENT_SAWTOOTH,TIME_BLANCHE);
+	pont2[54]=create_note(1, NOTE_G_FQ, 3,INSTRUMENT_SAWTOOTH,TIME_BLANCHE);
+	
+	
+	transition[0]= create_note(1, NOTE_AS_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_BLANCHE);
+	transition[1]= create_note(1, NOTE_AS_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_NOIRE);
+	transition[2]= create_note(1, NOTE_F_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_NOIRE);
+	transition[3]= create_note(1, NOTE_E_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_BLANCHE);
+	transition[4]= create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_BLANCHE);
+	transition[5]= create_note(1, NOTE_A_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_RONDE);
+	transition[6]= create_note(1, NOTE_E_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_BLANCHE);
+	transition[7]= create_note(1, NOTE_D_FQ, 4,INSTRUMENT_SAWTOOTH,TIME_BLANCHE);
+	
+	//blank mesure
+	basse_blank[0] = create_note(1, NOTE_NA_FQ, 1,INSTRUMENT_NA,TIME_CROCHE_DOUBLE);
+	basse_blank[1] = create_note(2, NOTE_NA_FQ, 1,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	basse_blank[2] = create_note(3, NOTE_NA_FQ, 1,INSTRUMENT_NA, TIME_CROCHE);
+	basse_blank[3] = create_note(4, NOTE_NA_FQ, 1,INSTRUMENT_NA, TIME_CROCHE);
+	basse_blank[4] = create_note(5, NOTE_NA_FQ, 1,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	basse_blank[5] = create_note(6, NOTE_NA_FQ, 1,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	basse_blank[6] = create_note(7, NOTE_NA_FQ, 1,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	basse_blank[7] = create_note(8, NOTE_NA_FQ, 1,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	basse_blank[8] = create_note(8, NOTE_NA_FQ, 1,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	basse_blank[9] = create_note(8, NOTE_NA_FQ, 1,INSTRUMENT_NA, TIME_CROCHE);
+	basse_blank[10] = create_note(8, NOTE_NA_FQ, 1,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	basse_blank[11] = create_note(8, NOTE_NA_FQ, 1,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	basse_blank[12] = create_note(8, NOTE_NA_FQ, 1,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	
+	
+
+	//bass
+	basse[0] = create_note(1, NOTE_D_FQ, 1,INSTRUMENT_TRIANGLE,TIME_CROCHE_DOUBLE);
+	basse[1] = create_note(2, NOTE_D_FQ, 1,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+	basse[2] = create_note(3, NOTE_D_FQ, 1,INSTRUMENT_TRIANGLE, TIME_CROCHE);
+	basse[3] = create_note(4, NOTE_D_FQ, 1,INSTRUMENT_TRIANGLE, TIME_CROCHE);
+	basse[4] = create_note(5, NOTE_NA_FQ, 1,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	basse[5] = create_note(6, NOTE_D_FQ, 1,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+	basse[6] = create_note(7, NOTE_NA_FQ, 1,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	basse[7] = create_note(8, NOTE_D_FQ, 1,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+	basse[8] = create_note(8, NOTE_NA_FQ, 1,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	basse[9] = create_note(8, NOTE_D_FQ, 1,INSTRUMENT_TRIANGLE, TIME_CROCHE);
+	basse[10] = create_note(8, NOTE_D_FQ, 1,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+	basse[11] = create_note(8, NOTE_D_FQ, 1,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+	basse[12] = create_note(8, NOTE_D_FQ, 1,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+	
+	basse[13] = create_note(1, NOTE_C_FQ, 1,INSTRUMENT_TRIANGLE,TIME_CROCHE_DOUBLE);
+	basse[14] = create_note(2, NOTE_C_FQ, 1,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+	basse[15] = create_note(3, NOTE_C_FQ, 1,INSTRUMENT_TRIANGLE, TIME_CROCHE);
+	basse[16] = create_note(4, NOTE_C_FQ, 1,INSTRUMENT_TRIANGLE, TIME_CROCHE);
+	basse[17] = create_note(5, NOTE_NA_FQ, 1,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	basse[18] = create_note(6, NOTE_C_FQ, 1,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+	basse[19] = create_note(7, NOTE_NA_FQ, 1,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	basse[20] = create_note(8, NOTE_C_FQ, 1,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+	basse[21] = create_note(8, NOTE_NA_FQ, 1,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	basse[22] = create_note(8, NOTE_C_FQ, 1,INSTRUMENT_TRIANGLE, TIME_CROCHE);
+	basse[23] = create_note(8, NOTE_C_FQ, 1,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+	basse[24] = create_note(8, NOTE_C_FQ, 1,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+	basse[25] = create_note(8, NOTE_C_FQ, 1,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+	
+	basse[26] = create_note(1, NOTE_B_FQ, 0,INSTRUMENT_TRIANGLE,TIME_CROCHE_DOUBLE);
+	basse[27] = create_note(2, NOTE_B_FQ, 0,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+	basse[28] = create_note(3, NOTE_B_FQ, 0,INSTRUMENT_TRIANGLE, TIME_CROCHE);
+	basse[29] = create_note(4, NOTE_B_FQ, 0,INSTRUMENT_TRIANGLE, TIME_CROCHE);
+	basse[30] = create_note(5, NOTE_NA_FQ, 0,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	basse[31] = create_note(6, NOTE_B_FQ, 0,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+	basse[32] = create_note(7, NOTE_NA_FQ, 0,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	basse[33] = create_note(8, NOTE_B_FQ, 0,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+	basse[34] = create_note(8, NOTE_NA_FQ, 0,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	basse[35] = create_note(8, NOTE_B_FQ, 0,INSTRUMENT_TRIANGLE, TIME_CROCHE);
+	basse[36] = create_note(8, NOTE_B_FQ, 0,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+	basse[37] = create_note(8, NOTE_B_FQ, 0,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+	basse[38] = create_note(8, NOTE_B_FQ, 0,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+	
+	basse[39] = create_note(1, NOTE_AS_FQ, 0,INSTRUMENT_TRIANGLE,TIME_CROCHE_DOUBLE);
+	basse[40] = create_note(2, NOTE_AS_FQ, 0,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+	basse[41] = create_note(3, NOTE_AS_FQ, 0,INSTRUMENT_TRIANGLE, TIME_CROCHE);
+	basse[42] = create_note(4, NOTE_AS_FQ, 0,INSTRUMENT_TRIANGLE, TIME_CROCHE);
+	basse[43] = create_note(5, NOTE_NA_FQ, 0,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	basse[44] = create_note(6, NOTE_AS_FQ, 0,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+	basse[45] = create_note(7, NOTE_NA_FQ, 0,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	basse[46] = create_note(8, NOTE_AS_FQ, 0,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+	basse[47] = create_note(8, NOTE_NA_FQ, 0,INSTRUMENT_NA, TIME_CROCHE_DOUBLE);
+	basse[48] = create_note(8, NOTE_AS_FQ, 0,INSTRUMENT_TRIANGLE, TIME_CROCHE);
+	basse[49] = create_note(8, NOTE_AS_FQ, 0,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+	basse[50] = create_note(8, NOTE_AS_FQ, 0,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+	basse[51] = create_note(8, NOTE_AS_FQ, 0,INSTRUMENT_TRIANGLE, TIME_CROCHE_DOUBLE);
+
+	
+	
+	
+	
+	void *args1;
+	pthread_t thread1, thread2,thread3;
+    
+    pthread_create(&thread1, NULL, play_basse,args1);
+    pthread_create(&thread2, NULL, play_melody,args1);
+    pthread_create(&thread3, NULL, play_2melody,args1);
+
+    pthread_join(thread1, NULL);
+    pthread_join(thread2, NULL);
+	pthread_join(thread3, NULL);
+	
 	
 	
 	
