@@ -91,6 +91,16 @@ double noteToFreq(note_t note);
  * \return le pointeur sur le buffer résultat
  */
 short * pdt_convolution(short * buffer1,short * buffer2,size_t time);
+
+/**
+ * \fn short **silent_wave() 
+ * \brief joue une note en silence (lol)
+ * \param short *buffer buffer de short pour la note
+ * \param size_t sample_count nb d'échantillonage
+ * \param double freq fréquence d'échantillonage
+ */
+short *organ_wave(short *buffer, size_t sample_count, double freq);
+
 /* ------------------------------------------------------------------------ */
 /*                  C O D E    D E S    F O N C T I O N S                   */
 /* ------------------------------------------------------------------------ */
@@ -112,8 +122,8 @@ void init_sound(snd_pcm_t **pcm){
     snd_pcm_hw_params_set_channels(*pcm, hw_params, 1);
     snd_pcm_hw_params_set_rate(*pcm, hw_params, 48000, 0);
     snd_pcm_hw_params_set_periods(*pcm, hw_params, 10, 0);
-    snd_pcm_hw_params_set_period_time(*pcm, hw_params, 100000, 0); // 0.1 seconds
-
+    //snd_pcm_hw_params_set_period_time(*pcm, hw_params, 100000, 0); // 0.1 seconds
+	snd_pcm_hw_params_set_period_time(*pcm, hw_params, 200000, 0); // 0.1 seconds
     snd_pcm_hw_params(*pcm, hw_params);
     
 }
@@ -168,6 +178,76 @@ short *sine_wave(short *buffer, size_t sample_count, double freq) {
         buffer[i] = BASE_AMPLITUDE * sin(2 * M_PI * freq * ((double)i / SAMPLE_RATE));
     }
     return buffer;
+}
+
+/**
+ * \fn short *sine_chelou_wave() 
+ * \brief joue une note en sinus
+ * \param short *buffer buffer de short pour la note
+ * \param size_t sample_count nb d'échantillonage
+ * \param double freq fréquence d'échantillonage
+ */
+short *organ_wave(short *buffer, size_t sample_count, double freq){
+	int i,j;
+	
+	
+	sine_wave(buffer,sample_count,freq);
+	
+	/*
+	double drawbar16 = freq / 2.0;  // one octave below
+  // the 5 1/3 drawbar, which is a "sub-third"
+  double drawbar5AndOneThird = drawbar16 * 3.0;
+  double drawbar8 = freq;
+  double drawbar4 = freq * 2.0;  // one octave above
+  double drawbar2AndTwoThirds = freq * 3.0;
+  double drawbar2 = freq * 4.0;  // two octaves
+  double drawbar1AndThreeFifths = freq * 5.0;
+  double drawbar1AndOneThird = freq * 6.0;
+  double drawbar1 = freq * 8.0;  // three octaves
+	*/
+	
+	//{0, 8, 4, 0, 0, 0, 0, 4, 0};
+	
+	
+		short * buffer1 = (short*)malloc(sizeof(short)*sample_count);
+		sine_wave(buffer1,sample_count,freq*2);
+		
+		short * buffer2 = (short*)malloc(sizeof(short)*sample_count);
+		sine_wave(buffer2,sample_count,freq*3);
+		
+		
+		short * buffer3 =(short*)malloc(sizeof(short)*sample_count);
+		sine_wave(buffer3,sample_count,freq*(2/3));
+		
+		short * buffer4 =(short*)malloc(sizeof(short)*sample_count);
+		sine_wave(buffer4,sample_count,freq/4);
+		
+		short * buffer5 =(short*)malloc(sizeof(short)*sample_count);
+		sine_wave(buffer5,sample_count,freq*0.5);
+		
+		
+    	for(i=0;i<sample_count;i++){
+    		buffer[i]=buffer2[i]+buffer1[i]+buffer[i]+buffer4[i]+buffer5[i]+buffer3[i];
+    	}
+		
+		
+		
+	/*	
+	FILE* file = fopen("mongrospcm.raw", "wb");
+    if (file == NULL) {
+        fprintf(stderr, "Erreur lors de l'ouverture du fichier %s\n","mongrospcm.raw");
+        exit(1);
+    }
+
+    fwrite(buffer, sizeof(short), sample_count, file);
+    fclose(file);*/
+		
+	free(buffer2);	
+	free(buffer1);
+	free(buffer3);
+	free(buffer4);
+	free(buffer5);
+	return buffer;
 }
 
 /**
@@ -293,6 +373,10 @@ void switch_instrument(short *buffer,note_t note,double freq,size_t time){
 			square_wave(buffer,time,freq);
 		break;
 		
+		case INSTRUMENT_ORGAN:
+			organ_wave(buffer,time,freq);
+		break;
+		
 		default : 
 				silent_wave(buffer,time,freq);
 		break;
@@ -345,9 +429,7 @@ size_t i,j;
 
     for ( i = 0; i < time; ++i) {
         buffer1[i] = buffer[i];
-        printf("%d\n",buffer[i]);
     }
-	getchar();
     free(buffer); // Libérer la mémoire allouée pour le buffer temporaire
     return buffer1; // Retourner buffer1 modifié
 }
@@ -357,6 +439,10 @@ void play_sample(char * fic,snd_pcm_t *pcm){
 	
 	
 FILE *f = fopen(fic, "rb");
+if(f==NULL)	{
+	printf("erreur fic");
+	return;
+}
 fseek(f, 0, SEEK_END);
 long file_size = ftell(f);
 fseek(f, 0, SEEK_SET);
@@ -369,6 +455,7 @@ snd_pcm_writei(pcm, samples, SAMPLE_RATE);
 free(samples);
 
 }
+
 
 
 

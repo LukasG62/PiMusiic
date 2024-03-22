@@ -71,6 +71,7 @@ typedef enum {
 	INSTRUMENT_SAWTOOTH,/*!< Utilisation d’un signal en dent de scie*/
 	INSTRUMENT_TRIANGLE, /*!< Utilisation d’un signal en triangle*/
 	INSTRUMENT_SQUARE, /*!< Utilisation d’un signal carré*/
+	INSTRUMENT_ORGAN,
 	INSTRUMENT_NB /*!< Nombre d’instruments disponibles*/
 }instrument_t;
 

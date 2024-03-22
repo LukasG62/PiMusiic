@@ -14,6 +14,7 @@
 #include <math.h>
 #include <alsa/asoundlib.h>
 #include <unistd.h> 
+#include <pthread.h>
 #include "note.h"
 
 /* ------------------------------------------------------------------------ */
@@ -72,5 +73,6 @@ void end_sound(snd_pcm_t *pcm);
  * \brief joue un sample
  */
 void play_sample(char * fic,snd_pcm_t *pcm);
+
 
 #endif
