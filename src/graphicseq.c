@@ -222,9 +222,8 @@ choices_t show_main_menu() {
 choices_t show_connection_menu(char *rfid, char *username) {
     // Affichage du menu
     init_menu("Connection", "Please scan your badge", 0);
-    // On récupère le badge RFID TODO : A FAIRE
-    // Pour l'instant on simule comme au lit
-    strcpy(rfid, "rfid123");
+    // On récupère le badge RFID
+    read_rfid(rfid);
     // On affiche le badge RFID
     attron(COLOR_PAIR(COLOR_PAIR_MENU_PROMPT));
     mvprintw(3, 4, "Your badge : %-30s", rfid);
