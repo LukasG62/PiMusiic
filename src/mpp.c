@@ -157,7 +157,7 @@ void deserialize_mpp_request(buffer_t buffer, mpp_request_t *request) {
     // strtok n'est pas thread safe, on utilise strtok_r donc pour cela on doit déclarer un pointeur saveptr
     char *saveptr = NULL;
     char *token = NULL;
-
+  
     // lecture de la première ligne
     token = strtok_r(buffer, "\n", &saveptr);
     sscanf(token, "%d %s %ld", (int *) &request->code, request->rfidId, &request->musicId);
@@ -427,7 +427,6 @@ int add_music_to_db(music_t *music, char *rfidId) {
 
     fwrite(music, sizeof(music_t), 1, file);
     fclose(file);
-
     return 0;
 }
 

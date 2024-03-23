@@ -35,3 +35,39 @@ export CCC=...
 - WiringPi library installed
 - ALSA library installed
 - ncurses library installed (for user interface)
+- BCM2835 library installed (for spi communication)
+- RFID library installed (for RFID card communication)
+
+## About RFID library :
+
+The rfid library is not really a library but a program made by paulvha. I modified it to remove all the printouts to compile it as a library
+
+You can find the original program here :
+[rfid-rc522](https://github.com/paulvha/rfid-rc522 "Paulvha's rfid-rc522 program")
+
+You can suppress the printouts by changing the p_printf function in the main.c file
+
+Then you can compile and install it as a library with the following makefile :
+
+```makefile
+# Path to cross-compiler binaries
+PATH_CC_BINS?=/home/lukas/LE3/OCC/tools-master/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin
+# Default target fake root directory
+TARGET_FAKEROOT_RPI?=/home/lukas/LE3/OCC/fakeroot
+# Compiler command
+CCC?=$(PATH_CC_BINS)/arm-linux-gnueabihf-gcc-4.8.3
+LDD?=$(PATH_CC_BINS)/arm-linux-gnueabihf-ld
+
+all: librfid.a install
+
+%.o: %.c %.h
+	$(CCC) -o $@ -c $< 
+
+librfid.a: config.o rc522.o rfid.o value.o main.o
+	ar rcs $@ $^ 
+	
+install:
+	mkdir -p $(TARGET_FAKEROOT_RPI)/include/rfid
+	cp librfid.a $(TARGET_FAKEROOT_RPI)/lib
+	cp main.h config.h rc522.h rfid.h value.h $(TARGET_FAKEROOT_RPI)/include/rfid
+```
