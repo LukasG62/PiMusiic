@@ -30,14 +30,14 @@ LIB_DIR=lib
 CPFLAGS =-I$(INCLUDE_DIR)
 # Linker flags
 LDFLAGS =-L$(TARGET_FAKEROOT_RPI)/lib
-LB_FLAG =-lncurses -lwiringPi -lpthread -lm
+LB_FLAG =-lncurses -lwiringPi -lpthread -lm -lrfid -lbcm2835
 
 
 ## Rules
 .PHONY:all clean docs install
 
 
-all:$(PROG_PC) $(PROG_RPI) docs
+all:$(PROG_RPI) docs
 
 test:
 	@echo "Test environnement :"
@@ -55,7 +55,7 @@ $(BIN_PC_DIR)/%: $(OBJ_DIR)/%-pc.o $(LIB_DIR)/libmusic-pc.a $(LIB_DIR)/libinet-p
 $(BIN_RPI_DIR)/%: $(OBJ_DIR)/%-pi.o $(LIB_DIR)/libmusic-pi.a  $(LIB_DIR)/libinet-pi.a
 	@mkdir -p $(BIN_RPI_DIR)
 	@echo "Compilation du programme $@"
-	@$(CCC) -o $@ $< $(LD_FLAGS) $(LB_FLAG) -I$(INCLUDE_DIR) -lmusic-pi -linet-pi -L$(LIB_DIR)
+	@$(CCC) -o $@ $< $(LD_FLAGS) -I$(INCLUDE_DIR) -lmusic-pi -linet-pi -L$(LIB_DIR) $(LB_FLAG)
 
 
 ######## FOR HOST ########
