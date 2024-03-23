@@ -11,12 +11,19 @@
 #include "note.h"
 #include "wiringseq.h"
 #include "mpp.h"
+#include "wiringseq.h"
+#include "request.h"
+#include <time.h>   
 
 #define RPI_COLS 106 /*!< Nombre de colonnes de la fenêtre sur le RPI */
 #define RPI_LINES 29 /*!< Nombre de lignes de la fenêtre sur le RPI */
+#define MAX_MENU_ITEMS 18 /*!< Nombre maximum d'items dans un menu */
 
 #define REVERSE_IF_COL(col, navcol, isSelected) (((col) == (navcol)) && (isSelected) ? A_REVERSE : 0) /*!< Inversion de la couleur si la colonne est sélectionnée */
 #define REVERSE_IFNOT_PLAYMODE(playMode, isSelected) ((playMode && isSelected) ? 0 : A_REVERSE) /*!< Inversion de la couleur si le mode de lecture est activé */
+
+#define NAVIGATION_MODE 0 /*!< Mode de navigation */
+#define EDIT_MODE 1       /*!< Mode d'édition */
 // X : Colonne Y : Ligne
 
 // Constantes pour le l'entête d'information du séquenceur
@@ -79,20 +86,22 @@ typedef enum
 
     // Couleurs pour le séquenceur
     COLOR_PAIR_SEQ = 20,         /*!< Couleur du séquenceur */
-    COLOR_PAIR_SEQ_SELECTED,     /*!< Couleur du séquenceur sélectionné */
-    COLOR_PAIR_SEQ_BORDER,       /*!< Couleur des bordures du séquenceur */
+    COLOR_PAIR_SEQ_NOTSAVED,     /*!< Couleur pour dire que la musique n'est pas sauvegardée */
+    COLOR_PAIR_SEQ_SAVED,        /*!< Couleur pour dire que la musique est sauvegardée */
     COLOR_PAIR_SEQ_PLAYED,       /*!< Couleur de la ligne jouée */
     COLOR_PAIR_SEQ_OCTAVE,       /*!< Couleur de la ligne d'octave */
     COLOR_PAIR_SEQ_NOTE,         /*!< Couleur de la ligne de note */
     COLOR_PAIR_SEQ_INSTRUMENT,   /*!< Couleur de la ligne d'instrument */
     COLOR_PAIR_SEQ_SHIFT,        /*!< Couleur de la ligne de temps */
-    COLOR_PAIR_SEQ_HEADER_CH1,   /*!< Couleur de l'entête du channel 1 */
-    COLOR_PAIR_SEQ_HEADER_CH2,   /*!< Couleur de l'entête du channel 2 */
-    COLOR_PAIR_SEQ_HEADER_CH3,   /*!< Couleur de l'entête du channel 3 */
     COLOR_PAIR_SEQ_HEADER_INFO,  /*!< Couleur de l'entête d'information */
     COLOR_PAIR_SEQ_HEADER_TITLE, /*!< Couleur de l'entête de titre */
 } color_pairs_t;
 
+/**
+ * @enum custom_colors_t
+ * @brief Couleurs personnalisées qui n'existent pas déjà dans ncurses
+ * @note Ici on ne définit les identifiants des couleurs personnalisées, pas les couleurs elles-mêmes
+ */
 typedef enum
 {
     COLOR_LIGHTGREY = 10, /*!< Gris clair */
@@ -116,21 +125,19 @@ typedef enum
 /**
  * \enum sequencer_nav_ch_t
  * \brief Enumération des channels du séquenceur
- * \details Cette énumération permet de définir les channels du séquenceur
+ * \details Cette énumération permet de définir les channels du séquenceur graphiquement
  */
-typedef enum
-{
+typedef enum {
     SEQUENCER_NAV_CH1 = 0, /*!< Channel 1 */
     SEQUENCER_NAV_CH2,     /*!< Channel 2 */
     SEQUENCER_NAV_CH3,     /*!< Channel 3 */
-    SEQUENCER_NAV_CH_MAX,  /*!< Nombre de channels */
+    SEQUENCER_NAV_CH_MAX = MUSIC_MAX_CHANNELS,  /*!< Nombre de channels */
 } sequencer_nav_ch_t;
 
 /**
  * \struct sequencer_nav_t
  * \brief Structure de navigation dans le séquenceur
  * \details Cette structure permet de définir la position de navigation dans le séquenceur
- *
  */
 typedef struct
 {
@@ -150,6 +157,13 @@ typedef struct
 void init_ncurses();
 
 /**
+ * @fn init_window(WINDOW *win)
+ * @brief Initialisation de la fenêtre principale
+ * @param win La fenêtre à initialiser
+ */
+void init_window(WINDOW *win);
+
+/**
  * \fn void exit_ncurses()
  * \brief Fin de ncurses
  * \details Cette fonction s'occupe de la fin de ncurses
@@ -166,53 +180,96 @@ void exit_ncurses();
 choices_t show_main_menu();
 
 /**
- * \fn choices_t show_connection_menu
- * \brief Affichage du menu de connexion
- * \details Cette fonction affiche le menu de connexion et gère la navigation dans le menu
- * \return Le choix de l'utilisateur
- * \see choices_t
+ * @fn choices_t show_connection_menu(char *rfid, char *username)
+ * @brief Affichage du menu de connexion et effectue la connexion
+ * @param rfid Le rfid de l'utilisateur
+ * @param username Le nom d'utilisateur de l'utilisateur
+ * @return choices_t 
+ * @note la fonction remplit les variables rfid et username
  */
-choices_t show_connection_menu();
+choices_t show_connection_menu(char *rfid, char *username);
 
 /**
- * \fn choices_t show_create_music_menu
- * \brief Affichage du menu de création de musique
- * \details Cette fonction affiche le menu de création de musique et gère la navigation dans le menu
- * \param music La musique à créer
- * \param connected Si l'utilisateur est connecté
- * \note Si l'utilisateur n'est pas connecté, il ne peut pas sauvegarder la musique
- * \note music doit être initialisé et alloué
- * \return Le choix de l'utilisateur
- * \see choices_t
- * \see music_t
+ * @fn choices_t show_list_music(char *rfid, music_t *music)
+ * @brief Affiche le menu de liste de musique et effectue les requetes pour fetch la musique
+ * @param rfid Le rfid de l'utilisateur
+ * @param music la musique choisie
+ * @return choices_t 
+ * @note la fonction remplit la musique
+ * @warning la musique et le rfid doivent être alloués et initialisés
  */
-choices_t show_create_music_menu(music_t *music, int connected);
+choices_t show_list_music(char *rfid, music_t *music);
 
 /**
- * \fn choices_t show_sequencer
- * \brief Affichage du séquenceur
- * \details Cette fonction affiche le séquenceur et gère la navigation dans le séquenceur
- * \param music La musique à afficher
- * \param connected Si l'utilisateur est connecté
- * \note music doit être initialisé et alloué
- * \return Le choix de l'utilisateur
- * \see choices_t
- * \see music_t
+ * @fn choices_t show_date(time_t *timestamp, char *chaine)
+ * @brief Affiche la date en format lisible
+ * @param timestamp Le timestamp de la date
+ * @param chaine La chaine qui va contenir la date
  */
-choices_t show_sequencer(music_t *music, int connected);
+void show_date(time_t timestamp, char *chaine);
 
 /**
- * \fn void create_sequencer_nav()
- * \brief Création de la structure de navigation dans le séquenceur
- * \return La structure de navigation
+ * @fn choices_t show_create_music_menu(music_t *music, char *rfid)
+ * @brief La fonction qui affiche le menu de création de musique
+ * @param music La musique à créer
+ * @param rfid Le rfid de l'utilisateur
+ * @return choices_t 
+ * @note la fonction remplit la musique et le rfid
+ * @warning la musique et le rfid doivent être alloués et initialisés
+ */
+choices_t show_create_music_menu(music_t *music, char *rfid);
+
+/**
+ * @fn void sequencer_nav_up(sequencer_nav_t *nav)
+ * @brief permet de passer d'une ligne à une autre dans le séquenceur
+ * @param nav la structure de navigation
+ */
+void sequencer_nav_up(sequencer_nav_t *nav);
+
+/**
+ * @fn void sequencer_nav_down(sequencer_nav_t *nav)
+ * @brief permet de passer d'une ligne à une autre dans le séquenceur
+ * @param nav la structure de navigation
+ */
+void sequencer_nav_down(sequencer_nav_t *nav);
+
+/**
+ * @fn void sequencer_nav_left(sequencer_nav_t *nav)
+ * @brief La fonction qui permet de passer d'une colonne à une autre dans le séquenceur (vers la gauche)
+ * @param nav la structure de navigation
+ */
+void sequencer_nav_left(sequencer_nav_t *nav);
+
+/**
+ * @fn void sequencer_nav_right(sequencer_nav_t *nav)
+ * @brief La fonction qui permet de passer d'une colonne à une autre dans le séquenceur (vers la droite)
+ * @param nav 
+ */
+void sequencer_nav_right(sequencer_nav_t *nav);
+
+/**
+ * @fn create_sequencer_nav()
+ * @brief Création de la structure de navigation du séquenceur
+ * @return sequencer_nav_t 
  */
 sequencer_nav_t create_sequencer_nav();
 
 /**
- * \fn int getchr_wiringpi();
- * \brief Récupération de l'équivalent d'un bouton physique
- * \return Le caractère correspondant au bouton
+ * @fn void show_sequencer(music_t *music, char *connected)
+ * @brief La fonction qui affiche le séquenceur
+ * @param music La musique à afficher
+ * @param connected Le rfid de l'utilisateur connecté
+ * @return choices_t 
+ * @note l'utilisateur est considéré comme connecté si connected est différent de \0
+ * @warning la musique et connected doit être allouée et initialisée
+ */
+choices_t show_sequencer(music_t *music, char *connected);
+
+/**
+ * @fn int getch_wiringpi()
+ * @brief Transpose le bitmap des buttons wiringpi en caractère ncurses
+ * @return int 
  */
 int getchr_wiringpi();
 
-#endif
+#endif // GRAPHIC_SEQ_H
