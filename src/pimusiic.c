@@ -22,7 +22,7 @@ void clean_up() {
 int main() {
     atexit(clean_up);
     char pseudo[20] = "";
-    char rfid[20] = "rfid123";
+    char rfid[20] = "";
     music_t music;
     init_music(&music, 120);
     choices_t choice = CHOICE_MAIN_MENU;
