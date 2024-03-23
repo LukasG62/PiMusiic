@@ -59,7 +59,7 @@ void init_sound(snd_pcm_t **pcm);
  * \param bpm le bpm de la musique 
  * \param note la note à jouer 
  */
-void play_note(note_t note,short bpm,snd_pcm_t *pcm);
+void play_note(note_t note,short bpm,snd_pcm_t *pcm,short effect);
 
 /**
  * \fn void end_sound(snd_pcm_t *pcm);

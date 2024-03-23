@@ -72,6 +72,7 @@ typedef enum {
 	INSTRUMENT_TRIANGLE, /*!< Utilisation d’un signal en triangle*/
 	INSTRUMENT_SQUARE, /*!< Utilisation d’un signal carré*/
 	INSTRUMENT_ORGAN,
+	INSTRUMENT_SINPHASER,
 	INSTRUMENT_NB /*!< Nombre d’instruments disponibles*/
 }instrument_t;
 

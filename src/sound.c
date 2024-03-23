@@ -65,7 +65,7 @@ short *silent_wave(short *buffer, size_t sample_count,double freq);
  * \param double freq frequence réelle de la note
  * \param double time durée du temps
  */
-void switch_instrument(short * buffer,note_t note,double freq,size_t time);
+void switch_instrument(short * buffer,note_t note,double freq,size_t time,short effect);
 
 /**
  * \fn  noteToTime()
@@ -93,14 +93,47 @@ double noteToFreq(note_t note);
 short * pdt_convolution(short * buffer1,short * buffer2,size_t time);
 
 /**
- * \fn short **silent_wave() 
- * \brief joue une note en silence (lol)
+ * \fn short **organ_wave() 
+ * \brief joue une note en orgue 
  * \param short *buffer buffer de short pour la note
  * \param size_t sample_count nb d'échantillonage
  * \param double freq fréquence d'échantillonage
  */
 short *organ_wave(short *buffer, size_t sample_count, double freq);
 
+
+/**
+ * \fn short sine_sound(int time, int amplitude , int phase, double freq ) 
+ * \brief retourne la valeur de sin 
+ * \param short *buffer buffer de short pour la note
+ * \param size_t sample_count nb d'échantillonage
+ * \param double freq fréquence d'échantillonage
+ */
+short sine_sound(int time, int amplitude , int phase, double freq );
+
+/**
+ * \fn  noteToFreq()
+ * \brief transforme une note en fréquence
+ * \param note_t note note à jouer
+ * \return frequence de la note en double
+ */
+short *sinphaser_wave(short *buffer,size_t time,double freq);
+
+/**
+ * \fn  fuzz_effect()
+ * \brief transforme une note en fréquence
+ * \param note_t note note à jouer
+ * \return frequence de la note en double
+ */
+short *fuzz_effect(short *buffer,size_t time);
+
+/**
+ * \fn  compression_effect()
+ * \brief transforme une note en fréquence
+ * \param note_t note note à jouer
+ * \return frequence de la note en double
+ */
+short * compression_effect(short *buffer,size_t time);
 /* ------------------------------------------------------------------------ */
 /*                  C O D E    D E S    F O N C T I O N S                   */
 /* ------------------------------------------------------------------------ */
@@ -144,7 +177,7 @@ void end_sound(snd_pcm_t *pcm){
  * \param bpm le bpm de la musique 
  * \param note la note à jouer 
  */
-void play_note(note_t note,short bpm,snd_pcm_t *pcm){
+void play_note(note_t note,short bpm,snd_pcm_t *pcm,short effect){
 	
 	
 	//fonction qui transforme un note_t en freq ( réelle )
@@ -155,7 +188,7 @@ void play_note(note_t note,short bpm,snd_pcm_t *pcm){
 	
 	short * buffer = (short*)malloc(sizeof(short)*time);
 	
-	switch_instrument(buffer,note,freq,time);//on joue la note 
+	switch_instrument(buffer,note,freq,time,effect);//on joue la note 
 	
 
         snd_pcm_writei(pcm, buffer, time);
@@ -180,6 +213,23 @@ short *sine_wave(short *buffer, size_t sample_count, double freq) {
     return buffer;
 }
 
+
+short *sinphaser_wave(short *buffer,size_t time,double freq){
+	int i;
+	for(i=0;i<time;i++){
+	
+		buffer[i] = sine_sound(i,BASE_AMPLITUDE , 0 , freq ) + sine_sound( i, BASE_AMPLITUDE ,1/(freq*2),  freq );
+	
+	}
+	return buffer;
+}
+
+short sine_sound(int time, int amplitude , int phase, double freq ){
+	
+	short result = amplitude * sin(2 * M_PI * freq * ((double)time/ SAMPLE_RATE) + phase );
+	return result;
+}
+
 /**
  * \fn short *sine_chelou_wave() 
  * \brief joue une note en sinus
@@ -190,45 +240,36 @@ short *sine_wave(short *buffer, size_t sample_count, double freq) {
 short *organ_wave(short *buffer, size_t sample_count, double freq){
 	int i,j;
 	
-	
-	sine_wave(buffer,sample_count,freq);
-	
-	/*
-	double drawbar16 = freq / 2.0;  // one octave below
-  // the 5 1/3 drawbar, which is a "sub-third"
-  double drawbar5AndOneThird = drawbar16 * 3.0;
-  double drawbar8 = freq;
-  double drawbar4 = freq * 2.0;  // one octave above
-  double drawbar2AndTwoThirds = freq * 3.0;
-  double drawbar2 = freq * 4.0;  // two octaves
-  double drawbar1AndThreeFifths = freq * 5.0;
-  double drawbar1AndOneThird = freq * 6.0;
-  double drawbar1 = freq * 8.0;  // three octaves
-	*/
-	
-	//{0, 8, 4, 0, 0, 0, 0, 4, 0};
-	
-	
-		short * buffer1 = (short*)malloc(sizeof(short)*sample_count);
-		sine_wave(buffer1,sample_count,freq*2);
+	short * buffer1 = (short*)malloc(sizeof(short)*sample_count);
+		
 		
 		short * buffer2 = (short*)malloc(sizeof(short)*sample_count);
-		sine_wave(buffer2,sample_count,freq*3);
+	
 		
 		
 		short * buffer3 =(short*)malloc(sizeof(short)*sample_count);
-		sine_wave(buffer3,sample_count,freq*(2/3));
+	
 		
 		short * buffer4 =(short*)malloc(sizeof(short)*sample_count);
-		sine_wave(buffer4,sample_count,freq/4);
+		
 		
 		short * buffer5 =(short*)malloc(sizeof(short)*sample_count);
-		sine_wave(buffer5,sample_count,freq*0.5);
-		
-		
-    	for(i=0;i<sample_count;i++){
-    		buffer[i]=buffer2[i]+buffer1[i]+buffer[i]+buffer4[i]+buffer5[i]+buffer3[i];
-    	}
+	
+	for (i = 0; i < sample_count; i++) {
+        buffer[i] = BASE_AMPLITUDE * sin(2 * M_PI * (freq) * ((double)i / SAMPLE_RATE));
+        
+        buffer1[i] = BASE_AMPLITUDE * sin(2 * M_PI * freq*2 * ((double)i / SAMPLE_RATE));
+        
+        buffer2[i] = BASE_AMPLITUDE * sin(2 * M_PI * freq*3 * ((double)i / SAMPLE_RATE));
+        
+        buffer3[i] = BASE_AMPLITUDE * sin(2 * M_PI * freq*2/3 * ((double)i / SAMPLE_RATE));
+        
+        buffer4[i] = BASE_AMPLITUDE * sin(2 * M_PI * freq*6 * ((double)i / SAMPLE_RATE));
+        
+        buffer1[i] = BASE_AMPLITUDE * sin( M_PI * freq *4 *((double)i / SAMPLE_RATE));
+        
+        buffer[i]=buffer2[i]+buffer1[i]+buffer[i]+buffer4[i]+buffer5[i]+buffer3[i];
+    }
 		
 		
 		
@@ -344,6 +385,40 @@ short *silent_wave(short *buffer, size_t sample_count,double freq){
     return buffer;
 }
 
+
+short *fuzz_effect(short *buffer,size_t time){
+int i;
+	for(i=0;i<time;i++){
+	double normalized_sample = (double)buffer[i]/ BASE_AMPLITUDE;
+
+    // Appliquez la distorsion non linéaire
+    double fuzzed_sample = tanh(normalized_sample * 4);
+
+    // Remettez à l'échelle l'échantillon à sa plage d'amplitude originale
+    buffer[i] = (short)(fuzzed_sample * BASE_AMPLITUDE);
+	
+	}
+
+return buffer;
+
+}
+
+short * compression_effect(short *buffer,size_t time){
+int i;
+	for(i=0;i<time;i++){
+		//per unit
+	double normalized_sample = (double)buffer[i]/ BASE_AMPLITUDE;
+	double compressed_sample = normalized_sample;
+	if (fabs(normalized_sample) > 0.5) {
+        compressed_sample = (1 + (normalized_sample - 0.5) / 2.0) * 0.5 * (normalized_sample > 0 ? 1 : -1);
+    }
+		buffer[i]=(short)(compressed_sample * BASE_AMPLITUDE);
+	
+	}
+
+return buffer;
+}
+
 /**
  * \fn switch_instrument()
  * \brief joue une note sur un instrument
@@ -352,8 +427,7 @@ short *silent_wave(short *buffer, size_t sample_count,double freq){
  * \param double time durée du temps
  */
  //sample rate x la durée = sample_count
-void switch_instrument(short *buffer,note_t note,double freq,size_t time){
-	
+void switch_instrument(short *buffer,note_t note,double freq,size_t time,short effect){
 	
 	switch(note.instrument){
 		
@@ -377,12 +451,23 @@ void switch_instrument(short *buffer,note_t note,double freq,size_t time){
 			organ_wave(buffer,time,freq);
 		break;
 		
+		case INSTRUMENT_SINPHASER:
+			sinphaser_wave(buffer,time,freq);
+		break;
+		
 		default : 
 				silent_wave(buffer,time,freq);
 		break;
 		
 	}
-
+	
+	if(effect == 1 ){
+		fuzz_effect(buffer,time);
+	}
+	if(effect == 2 ){
+		compression_effect(buffer,time);
+	}
+	return;
 	
 }
 
@@ -417,7 +502,7 @@ size_t noteToTime(note_t note, short bpm){
  */
 short * pdt_convolution(short * buffer1, short * buffer2, size_t time) {
     short * buffer = (short*)malloc(sizeof(short) * time);
-size_t i,j;
+	size_t i,j;
     for ( i = 0; i < time; ++i) {
         short somme = 0;
         for ( j = i; j < time; ++j) {
