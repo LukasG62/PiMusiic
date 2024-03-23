@@ -266,7 +266,7 @@ sequencer_nav_t create_sequencer_nav();
 choices_t show_sequencer(music_t *music, char *connected);
 
 /**
- * @fn int getch_wiringpi()
+ * @fn int getchr_wiringpi()
  * @brief Transpose le bitmap des buttons wiringpi en caractère ncurses
  * @return int 
  */
