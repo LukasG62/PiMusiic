@@ -156,11 +156,10 @@ void serialize_mpp_request(mpp_request_t *request, buffer_t buffer) {
 void deserialize_mpp_request(buffer_t buffer, mpp_request_t *request) {
     // strtok n'est pas thread safe, on utilise strtok_r donc pour cela on doit déclarer un pointeur saveptr
     char *saveptr = NULL;
-    int i, j;
-    if(strlen(buffer) == 0) BAD_REQUEST(request);
+    char *token = NULL;
+
     // lecture de la première ligne
-    char *token = strtok_r(buffer, "\n", &saveptr);
-    if(token == NULL) BAD_REQUEST(request);
+    token = strtok_r(buffer, "\n", &saveptr);
     sscanf(token, "%d %s %ld", (int *) &request->code, request->rfidId, &request->musicId);
     // lecture des musiques si elles existent
     token = strtok_r(NULL, "\n", &saveptr);
@@ -210,10 +209,9 @@ void deserialize_mpp_response(buffer_t buffer, mpp_response_t *response) {
     // strtok n'est pas thread safe, on utilise strtok_r donc pour cela on doit déclarer un pointeur saveptr
     // TODO : robustesse !!
     char *saveptr = NULL;
-    int i, j;
+    int i;
     // lecture de la première ligne
     char *token = strtok_r(buffer, "\n", &saveptr);
-    if(token == NULL) BAD_REQUEST(response);
     sscanf(token, "%d %s", (int *) &response->code, response->username);
 
     // Creation de la liste de musiques 
@@ -429,6 +427,8 @@ int add_music_to_db(music_t *music, char *rfidId) {
 
     fwrite(music, sizeof(music_t), 1, file);
     fclose(file);
+
+    return 0;
 }
 
 /**
@@ -534,7 +534,7 @@ void connect_handler(socket_t *sd, mpp_request_t *request, mpp_response_t *respo
     // On vérifie que l'utilisateur est présent dans user.db
     get_username_from_db(response->username, request->rfidId);
     if(*response->username == '\0') {
-        BAD_REQUEST(response);
+        CREATE_BAD_REQUEST(response);
         return;
     }
     response->code = MPP_RESPONSE_OK;
@@ -553,7 +553,7 @@ void list_music_handler(socket_t *sd, mpp_request_t *request, mpp_response_t *re
     // On vérifie que l'utilisateur est présent dans user.db
     get_username_from_db(response->username, request->rfidId);
     if(*response->username == '\0') {
-        BAD_REQUEST(response);
+        CREATE_BAD_REQUEST(response);
         return;
     }
     // On récupère la liste des musiques
@@ -575,7 +575,7 @@ void add_music_handler(socket_t *sd, mpp_request_t *request, mpp_response_t *res
     // On vérifie que l'utilisateur est présent dans user.db
     get_username_from_db(response->username, request->rfidId);
     if(*response->username == '\0') {
-        BAD_REQUEST(response);
+        CREATE_BAD_REQUEST(response);
         return;
     }
     // On ajoute la musique à la base de données
@@ -594,7 +594,7 @@ void get_music_handler(socket_t *sd, mpp_request_t *request, mpp_response_t *res
     // On vérifie que l'utilisateur est présent dans user.db
     get_username_from_db(response->username, request->rfidId);
     if(*response->username == '\0') {
-        BAD_REQUEST(response);
+        CREATE_BAD_REQUEST(response);
         return;
     }
     // On récupère la musique de la base de données
@@ -614,7 +614,7 @@ void delete_music_handler(socket_t *sd, mpp_request_t *request, mpp_response_t *
     // On vérifie que l'utilisateur est présent dans user.db
     get_username_from_db(response->username, request->rfidId);
     if(*response->username == '\0') {
-        BAD_REQUEST(response);
+        CREATE_BAD_REQUEST(response);
         return;
     }
     // On supprime la musique de la base de données
@@ -650,7 +650,6 @@ void free_response(mpp_response_t *response) {
  */
 void create_user_directories() {
     char folder[255];
-    char filename[255];
     // read user.db
     sprintf(folder, "%s/%s", MPP_DB_FOLDER, MPP_DB_USER_FILE);
     // On vérifie que le fichier existe sinon on le crée
@@ -731,6 +730,7 @@ void deserialize_music(char *token, music_t *music, char *saveptr) {
                 // on récupère les notes
                 note_t *note = &channel->notes[line];
                 sscanf(token, "%d %hd %hd %d %d", &line, &note->id, &note->octave, (int *)&note->instrument, (int *)&note->time);
+                update_channel_nbNotes(channel, line);
                 token = strtok_r(NULL, "\n", &saveptr);
             }
             channelCount++;

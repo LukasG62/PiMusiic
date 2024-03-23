@@ -135,6 +135,8 @@ pthread_t create_thread(pthread_t *thread, void *(*start_routine)(void *), long 
     // Création du thread
     CHECK_T(tid = pthread_create(thread, &attr, start_routine, (void *)thread_number), "PTHREAD_CREATE");
     pthread_attr_destroy(&attr); // Destruction de l'attribut du thread
+
+    return tid;
 }
 
 /* SECTION : SEM */

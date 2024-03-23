@@ -14,7 +14,7 @@
 #include "data.h"
 
 // TODO : DOIT ÊTRE DEFINI DANS WIRINGPISEQ H
-#define RFID_ID_SIZE 10 /*!< Taille de l'identifiant RFID */
+#define RFID_ID_SIZE 20 /*!< Taille de l'identifiant RFID */
 #define USERNAME_SIZE 15 /*!< Taille du nom d'utilisateur */
 #define REALLLOC_SIZE 10 /*!< Taille de réallouement de la liste d'identifiants de musiques */
 #define NO_MUSIC_ID -1 /*!< Identifiant de musique non défini */
@@ -33,6 +33,11 @@
 #define BAD_REQUEST(requestPtr) (requestPtr->code == MPP_RESPONSE_BAD_REQUEST) /*!< Vérifie si la requête est incorrecte */
 #define NOK_REQUEST(requestPtr) (requestPtr->code == MPP_RESPONSE_NOK) /*!< Vérifie si la réponse est NOK */
 #define NOT_FOUND(requestPtr) (requestPtr->code == MPP_RESPONSE_NOT_FOUND) /*!< Vérifie si la musique n'a pas été trouvée */
+
+#define CREATE_BAD_REQUEST(responsePtr) responsePtr->code = MPP_RESPONSE_BAD_REQUEST /*!< Crée une réponse BAD_REQUEST */
+#define CREATE_NOK(responsePtr) responsePtr->code = MPP_RESPONSE_NOK /*!< Crée une réponse NOK */
+#define CREATE_NOT_FOUND(responsePtr) responsePtr->code = MPP_RESPONSE_NOT_FOUND /*!< Crée une réponse NOT_FOUND */
+
 
 /**
  * \enum mpp_request_code_t
