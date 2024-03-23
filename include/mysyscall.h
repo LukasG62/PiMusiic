@@ -38,7 +38,7 @@ typedef void *(*pf_t)(void *);
 /*                      M A C R O - F O N C T I O N S                       */
 /* ------------------------------------------------------------------------ */
 #define CHECK_T(status, msg)          \
-    if (status != 0)                  \
+    if ((status) != 0)                  \
     {                                 \
         fprintf(stderr, "%s\n", msg); \
     }
