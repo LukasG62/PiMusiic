@@ -98,3 +98,39 @@ mpp_response_t send_get_music_request(socket_t *socket, char *rfid, time_t music
 
     return response;
 }
+
+/**
+ * @fn mpp_response_t client_request_handler(mpp_request_code_t code , char *rfid, music_t *music, time_t musicId)
+ * @brief Fonction qui gère les requêtes du client
+ * @param code Le code de la requête à envoyer
+ * @param rfid Le rfid de l'utilisateur
+ * @param music La musique à envoyer (si nécessaire)
+ * @param musicId L'identifiant de la musique (si nécessaire)
+ * @return mpp_response_t La réponse du serveur
+*/
+mpp_response_t client_request_handler(mpp_request_code_t code , char *rfid, music_t *music, time_t musicId) {
+    mpp_response_t response;
+    socket_t *socket = connectToServer(MPP_DEFAULT_IP, MPP_DEFAULT_PORT);
+    switch (code) {
+        case MPP_CONNECT:
+            response = send_connection_request(socket, rfid);
+            break;
+        case MPP_LIST_MUSIC:
+            response = send_list_music_request(socket, rfid);
+            break;
+        case MPP_ADD_MUSIC:
+            response = send_save_music_request(socket, rfid, music);
+            break;
+        case MPP_DELETE_MUSIC:
+            response = send_delete_music_request(socket, rfid, musicId);
+            break;
+        case MPP_GET_MUSIC:
+            response = send_get_music_request(socket, rfid, musicId);
+            break;
+        default:
+            response = create_mpp_response(MPP_RESPONSE_BAD_REQUEST, "", NULL, NULL);
+            break;
+    }
+    freeSocket(socket);
+    return response;
+}
