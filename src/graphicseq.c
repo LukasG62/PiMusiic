@@ -530,6 +530,7 @@ choices_t show_sequencer(music_t *music, char *rfid) {
     mpp_response_t reponse;
     choices_t choice = -1;
     note_t *note;
+    int i;
     char need2save = 0;
     int btnMode = NAVIGATION_MODE;
     int c = ERR; // la touche pressée
@@ -634,7 +635,7 @@ choices_t show_sequencer(music_t *music, char *rfid) {
     delwin(seqInfo);
     delwin(seqHelp);
     delwin(seqBody);
-    for(int i = 0; i < MUSIC_MAX_CHANNELS; i++) {
+    for(i = 0; i < MUSIC_MAX_CHANNELS; i++) {
         delwin(channelWin[i]);
     }
     // On nettoie l'écran
