@@ -17,7 +17,7 @@
 #define MUSIC_MAX_CHANNELS 3 /*!< Nombre de channels maximum dans une musique */
 
 //Fréquences des notes
-#define REF_OCTAVE 4 /*!< Octave de référence */
+#define REF_OCTAVE 3 /*!< Octave de référence */
 #define NOTE_C_FQ 261.63 /*!< Fréquence du DO à l’octave de référence */
 #define NOTE_CS_FQ 277.18 /*!< Fréquence du DO# à l’octave de référence */
 #define NOTE_D_FQ 293.66 /*!< Fréquence du RÉ à l’octave de référence */
@@ -92,6 +92,9 @@ typedef enum {
 	INSTRUMENT_SAWTOOTH,/*!< Utilisation d’un signal en dent de scie*/
 	INSTRUMENT_TRIANGLE, /*!< Utilisation d’un signal en triangle*/
 	INSTRUMENT_SQUARE, /*!< Utilisation d’un signal carré*/
+	INSTRUMENT_ORGAN,
+	INSTRUMENT_PIANO, 
+	INSTRUMENT_SINPHASER,
 	INSTRUMENT_NB /*!< Nombre d’instruments disponibles*/
 }instrument_t;
 
@@ -105,8 +108,8 @@ typedef enum {
 	TIME_CROCHE_DOUBLE = 1,/*!< elle vaut ¼ temps*/
 	TIME_CROCHE = 2,/*!< elle vaut ½ temps*/
 	TIME_NOIRE = 4,/*!< Valeur par défaut, elle vaut 1 temps*/
-	TIME_BLANCHE = 6,/*!< elle vaut 2 temps*/
-	TIME_RONDE = 8,/*!< elle vaut 4 temps*/
+	TIME_BLANCHE = 8,/*!< elle vaut 2 temps*/
+	TIME_RONDE = 16,/*!< elle vaut 4 temps*/
 	TIME_END = 10 /*!< Valeur de fin de la liste*/
 
 }time_duration_t;

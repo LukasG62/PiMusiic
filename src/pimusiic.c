@@ -1,7 +1,9 @@
 /**
- * \file pimusii.c
+ * \file pimusiic.c
  * \details Application principale
 */
+#include "sound.h"
+#include <pthread.h>
 
 #include "graphicseq.h"
 #include "wiringseq.h"
@@ -70,5 +72,6 @@ int main() {
         clear();
     }
     endwin();
+  
     return 0;
 }
