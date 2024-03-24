@@ -1,7 +1,7 @@
 ## Variables
 
 # Default Raspberry Pi IP address
-IP_RPI?=192.168.42.131
+IP_RPI?=192.168.234.131
 # Path to cross-compiler binaries
 PATH_CC_BINS?=/home/lukas/LE3/OCC/tools-master/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin
 # Default target fake root directory
@@ -29,14 +29,15 @@ LIB_DIR=lib
 # Compilation flags
 CPFLAGS =-I$(INCLUDE_DIR)
 # Linker flags
-LDFLAGS =-L$(TARGET_FAKEROOT_RPI)/lib
-LB_FLAG =-lncurses -lwiringPi -lm
+LB_FLAG =-lncurses -lwiringPi -lpthread -lm -lasound -lrfid -lbcm2835
+LD_FLAGS =-L$(LIB_DIR)
+
 
 ## Rules
 .PHONY:all clean docs install
 
 
-all:$(PROG_PC) $(PROG_RPI) docs
+all:$(PROG_RPI) docs
 
 test:
 	@echo "Test environnement :"
@@ -49,12 +50,13 @@ test:
 $(BIN_PC_DIR)/%: $(OBJ_DIR)/%-pc.o $(LIB_DIR)/libmusic-pc.a $(LIB_DIR)/libinet-pc.a
 	@mkdir -p $(BIN_PC_DIR)
 	@echo "Compilation du programme $@"
-	@gcc -o $@ $< $(LB_FLAG) -I$(INCLUDE_DIR) -lmusic-pc -linet-pc -L$(LIB_DIR) -lncurses -lwiringPi
+	@gcc -o $@ $< -I$(INCLUDE_DIR) -lmusic-pc -linet-pc $(LD_FLAGS) $(LB_FLAG) 
 
 $(BIN_RPI_DIR)/%: $(OBJ_DIR)/%-pi.o $(LIB_DIR)/libmusic-pi.a  $(LIB_DIR)/libinet-pi.a
 	@mkdir -p $(BIN_RPI_DIR)
 	@echo "Compilation du programme $@"
-	@$(CCC) -o $@ $< $(LD_FLAGS) $(LB_FLAG) -I$(INCLUDE_DIR) -lmusic-pi -linet-pi -L$(LIB_DIR)
+	@$(CCC) -o $@ $< -I$(INCLUDE_DIR) -lmusic-pi -linet-pi $(LD_FLAGS) $(LB_FLAG)
+
 
 
 ######## FOR HOST ########
@@ -81,19 +83,18 @@ $(LIB_DIR)/libinet-pc.a: $(OBJ_DIR)/data-pc.o $(OBJ_DIR)/session-pc.o $(OBJ_DIR)
 $(OBJ_DIR)/%-pc.o: $(SRC_DIR)/%.c $(INCLUDE_DIR)/%.h
 	@mkdir -p $(OBJ_DIR)
 	@echo "\t\tCompilation du fichier objet $@"
-	@gcc -o $@ -c  $< -I$(INCLUDE_DIR)
-
+	@gcc -o $@ -c  $< -I$(INCLUDE_DIR) -DSESSION_DEBUG -DDATA_DEBUG
 
 ######## FOR TARGET ########
 $(OBJ_DIR)/pimusiic-pi.o: $(SRC_DIR)/pimusiic.c
 	@mkdir -p $(OBJ_DIR)
 	@echo "\t\tCompilation du fichier objet $@"
-	@$(CCC) -o $@ -c  $< -I$(INCLUDE_DIR)
+	@$(CCC) -o $@ -c  $< -I$(INCLUDE_DIR) -g
 
 $(OBJ_DIR)/pi2iserv-pi.o: $(SRC_DIR)/pi2iserv.c
 	@mkdir -p $(OBJ_DIR)
 	@echo "\t\tCompilation du fichier objet $@"
-	@$(CCC) -o $@ -c  $< -I$(INCLUDE_DIR)
+	@$(CCC) -o $@ -c  $< -I$(INCLUDE_DIR) -g
 
 $(LIB_DIR)/libmusic-pi.a: $(OBJ_DIR)/graphicseq-pi.o $(OBJ_DIR)/mpp-pi.o $(OBJ_DIR)/note-pi.o $(OBJ_DIR)/sound-pi.o $(OBJ_DIR)/wiringseq-pi.o $(OBJ_DIR)/request-pi.o
 	@mkdir -p $(LIB_DIR)
@@ -108,18 +109,18 @@ $(LIB_DIR)/libinet-pi.a: $(OBJ_DIR)/data-pi.o $(OBJ_DIR)/session-pi.o $(OBJ_DIR)
 $(OBJ_DIR)/%-pi.o: $(SRC_DIR)/%.c $(INCLUDE_DIR)/%.h
 	@mkdir -p $(OBJ_DIR)
 	@echo "\t\tCompilation du fichier objet $@"
-	@$(CCC) -o $@ -c  $< -I$(INCLUDE_DIR)
 
+	@$(CCC) -o $@ -c  $< -I$(INCLUDE_DIR) -DSESSION_DEBUG -DDATA_DEBUG -Wall -g
 
 # installation rule
 install:
-	scp -r $(BIN_RPI_DIR) pi@$(IP_RPI):
+	scp -r ressources $(BIN_RPI_DIR) pi@$(IP_RPI):PiMusiic
 
 # Clean rule
 clean:
 	rm -rf $(OBJ_DIR)/* $(BIN_PC_DIR)/* $(BIN_RPI_DIR)/* $(LIB_DIR)/*
 
 docs:
-	doxygen Doxyfile
+	@doxygen Doxyfile 
 
 ##

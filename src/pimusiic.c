@@ -1,30 +1,77 @@
 /**
- * \file pimusii.c
+ * \file pimusiic.c
  * \details Application principale
 */
 #include "sound.h"
 #include <pthread.h>
 
+#include "graphicseq.h"
+#include "wiringseq.h"
+#include "request.h"
+#include "sound.h"
 
-snd_pcm_t *pcm1 = NULL;
-snd_pcm_t *pcm2 = NULL;
-snd_pcm_t *pcm3 = NULL;
-short bpm = 150;
-
+/**
+ * \fn void clean_up()
+ * \brief Fonction de nettoyage de l'application
+ * \details Cette fonction permet de nettoyer l'application avant de quitter
+ */
+void clean_up() {
+    // On arrête la bibliothèque graphique
+    endwin();
+    exit(EXIT_SUCCESS);
+}
 
 int main() {
-	init_sound(&pcm3);
-	note_t melodie = create_note(1, NOTE_A_FQ, 2,INSTRUMENT_SIN,TIME_RONDE);
-	play_note(melodie,120,pcm3,2);
-	play_note(melodie,120,pcm3,0);
-	end_sound(pcm3);
-	
-	melodie = create_note(1, NOTE_A_FQ, 2,INSTRUMENT_ORGAN,TIME_RONDE);
-	init_sound(&pcm1);
-	play_note(melodie,120,pcm1,1);
-	play_note(melodie,120,pcm1,0);
-	//melodie = create_note(1, NOTE_C_FQ, 1,INSTRUMENT_SINPHASER,TIME_RONDE);
-	play_note(melodie,120,pcm1,2);
-	end_sound(pcm1);
+    atexit(clean_up);
+    char pseudo[20] = "";
+    char rfid[20] = "";
+    music_t music;
+    init_music(&music, 120);
+    choices_t choice = CHOICE_MAIN_MENU;
+    // Initialisation de la bibliothèque graphique
+    init_ncurses();
+    // Initialisation de la bibliothèque wiringpi
+    init_wiringpi();
+
+    while (choice != CHOICE_QUITAPP) {
+        switch (choice) {
+            case CHOICE_MAIN_MENU:
+                choice = show_main_menu();
+                break;
+            case CHOICE_HELP:
+                //choice = show_help();
+                break;
+
+            case CHOICE_CONECTION_MENU:
+                if(*pseudo == '\0') choice = show_connection_menu(rfid, pseudo);
+                else choice = show_list_music(rfid, &music);
+                break;
+
+            case CHOICE_CREATEMUSIC:
+                choice = show_create_music_menu(&music, rfid);
+                break;
+
+            case CHOICE_MENU_LIST:
+                choice = show_list_music(rfid, &music);
+                break;
+
+            case CHOICE_SEQUENCER:
+                choice = show_sequencer(&music, rfid);
+                break;
+
+            case CHOICE_SAVENQUIT:
+                choice = CHOICE_MAIN_MENU;
+                break;
+            
+            default:
+                choice = CHOICE_MAIN_MENU;
+                break;
+        }
+
+        // On nettoie l'écran
+        clear();
+    }
+    endwin();
+  
     return 0;
 }

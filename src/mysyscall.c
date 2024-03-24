@@ -1,3 +1,9 @@
+/**
+ * @file mysyscall.c
+ * @author Lukas Grando
+ * @brief Couche d'abstraction pour les appels systèmes
+ * @version 1.0
+ */
 #include "mysyscall.h"
 
 /* SECTION 1 : Gestion des signaux */
@@ -129,6 +135,8 @@ pthread_t create_thread(pthread_t *thread, void *(*start_routine)(void *), long 
     // Création du thread
     CHECK_T(tid = pthread_create(thread, &attr, start_routine, (void *)thread_number), "PTHREAD_CREATE");
     pthread_attr_destroy(&attr); // Destruction de l'attribut du thread
+
+    return tid;
 }
 
 /* SECTION : SEM */
@@ -196,6 +204,7 @@ sem_t *create_sem(int value) {
  */
 void destroy_sem(sem_t *sem) {
     CHECK(sem_destroy(sem), "SEM_DESTROY");
+    free(sem);
 }
 
 /**

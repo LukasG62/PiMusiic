@@ -1,4 +1,5 @@
-/* @file note.h
+/** 
+ * @file note.h
  * @brief Définition des fonctions pour manipuler une note de musique
  */
 
@@ -46,6 +47,26 @@
 #define NOTE_B_NAME "B-"/*!< Nom du SI à l’octave de référence */
 #define NOTE_NA_NAME "--"/*!< Nom d'une non note */
 #define NB_NOTES 13 /*!< Nombre de notes dans une octave en incluant la non note */
+
+/**
+ * \enum note_id_t
+ * \brief Enumeration des notes
+*/
+typedef enum {
+	NOTE_NA_ID = 0, /*!< Pas de note*/
+	NOTE_C_ID, /*!< Identifiant du DO à l’octave de référence */
+	NOTE_CS_ID, /*!< Identifiant du DO# à l’octave de référence */
+	NOTE_D_ID, /*!< Identifiant du RÉ à l’octave de référence */
+	NOTE_DS_ID, /*!< Identifiant du RÉ# à l’octave de référence */
+	NOTE_E_ID, /*!< Identifiant du MI à l’octave de référence */
+	NOTE_F_ID, /*!< Identifiant du FA à l’octave de référence */
+	NOTE_FS_ID, /*!< Identifiant du FA# à l’octave de référence */
+	NOTE_G_ID, /*!< Identifiant du SOL à l’octave de référence */
+	NOTE_GS_ID, /*!< Identifiant du SOL# à l’octave de référence */
+	NOTE_A_ID, /*!< Identifiant du LA à l’octave de référence */
+	NOTE_AS_ID, /*!< Identifiant du LA# à l’octave de référence */
+	NOTE_B_ID /*!< Identifiant du SI à l’octave de référence */
+} note_id_t;
 
 // Nom des instruments
 #define INSTRUMENT_STEPMOTOR_NAME "STEP" /*!< Nom de l'instrument moteur pas à pas */
@@ -178,14 +199,14 @@ scale_t init_scale();
  * \return la note suivante
  * \note Elle met à jour la position dans la gamme
  */
-char *get_next_note(note_t *note, scale_t *scale);
+void get_next_note(note_t *note, scale_t *scale);
 
 /**
  * \fn char* get_previous_note(note_t *note, scale_t *scale);
  * \brief récupérer la note précédente avec les paramètres donnés
  * \param note note de référence 
  */
-char *get_previous_note(note_t *note, scale_t *scale);
+void get_previous_note(note_t *note, scale_t *scale);
 
 /**
  * \fn void get_note_freq(note_t *note, scale_t *scale);
@@ -234,5 +255,15 @@ void instrument2str(instrument_t instrument, char *str);
  * \param note la note à convertir
 */
 void note2str(note_t note, char *str);
+
+/**
+ * @fn update_channel_nbNotes(channel_t *channel, int noteIndex);
+ * @brief Mettre à jour le nombre de notes dans un channel
+ * @param channel le channel à mettre à jour
+ * @param noteIndex l'index de la note courante
+ * Ce script met à jour le nombre de notes dans un channel
+ * Pour cela il compare la note passée en paramètre avec la dernière note du channel
+ */
+void update_channel_nbNotes(channel_t *channel, int noteIndex);
 
 #endif

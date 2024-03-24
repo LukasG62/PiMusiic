@@ -1,7 +1,8 @@
 /**
- * \file syscall.h
- * \brief librairie de fonctions de manipulation d'appels systèmes
- * \version 1.0
+ * @file mysyscall.h
+ * @author Lukas Grando
+ * @brief Interface de la couche d'abstraction pour les appels systèmes
+ * @version 1.0
  */
 #ifndef __MY_SYSCALL_H__
 #define __MY_SYSCALL_H__
@@ -37,7 +38,7 @@ typedef void *(*pf_t)(void *);
 /*                      M A C R O - F O N C T I O N S                       */
 /* ------------------------------------------------------------------------ */
 #define CHECK_T(status, msg)          \
-    if (status != 0)                  \
+    if ((status) != 0)                  \
     {                                 \
         fprintf(stderr, "%s\n", msg); \
     }

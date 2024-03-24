@@ -74,25 +74,25 @@ scale_t init_scale() {
 }
 
 /**
- * \fn char* get_next_note(note_t *note, scale_t *scale);
+ * \fn void get_next_note(note_t *note, scale_t *scale);
  * \brief récupérer la note suivante
  * \param note note de référence
  * \param scale la gamme
  * \return la note suivante
  * \note Elle met à jour la position dans la gamme
  */
-char *get_next_note(note_t *note, scale_t *scale) {
+void get_next_note(note_t *note, scale_t *scale) {
 	note->id = (note->id + 1) % NB_NOTES;
 	note->frequency = scale->freqScale[note->id];
 }
 
 /**
- * \fn char* get_previous_note(note_t *note, scale_t *scale);
+ * \fn void get_previous_note(note_t *note, scale_t *scale);
  * \brief récupérer la note précédente avec les paramètres donnés
  * \param note note de référence 
  * \param scale la gamme
  */
-char *get_previous_note(note_t *note, scale_t *scale) {
+void get_previous_note(note_t *note, scale_t *scale) {
 	note->id = ((note->id - 1) == -1) ? NB_NOTES - 1 : note->id - 1;
 	note->frequency = scale->freqScale[note->id];
 }
@@ -133,7 +133,6 @@ note_t * cp_note(note_t * dest, note_t src){
 void init_channel(channel_t *channel, int id) {
 	note_t note = create_note(0, NOTE_NA_FQ, REF_OCTAVE, INSTRUMENT_NA, TIME_NOIRE);
 	int i;
-	if(id == MUSIC_MAX_CHANNELS-1) note.instrument = INSTRUMENT_STEPMOTOR; // Le dernier channel est réservé pour le moteur pas à pas
 	for (i = 0; i < CHANNEL_MAX_NOTES; i++) channel->notes[i] = note;
 	channel->nbNotes = 0; // Aucune note non vide // TODO : voir si on peut sans passer
 	channel->id  = id;
@@ -236,4 +235,19 @@ void note2str(note_t note, char *str) {
 			strcpy(str, NOTE_NA_NAME);
 			break;
 	}
+}
+
+void update_channel_nbNotes(channel_t *channel, int noteIndex) {
+	note_t currentNote = channel->notes[noteIndex];
+	if(noteIndex >= channel->nbNotes) {
+		if(currentNote.id != NOTE_NA_ID) channel->nbNotes = noteIndex + 1;
+		return;
+	} 
+	if(noteIndex == channel->nbNotes - 1) {
+		while(channel->notes[channel->nbNotes - 1].id == NOTE_NA_ID && channel->nbNotes > 0) {
+			channel->nbNotes--;
+		}
+	}
+
+	return;
 }
