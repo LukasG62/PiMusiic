@@ -716,6 +716,7 @@ void serialize_music(music_t *music, buffer_t buffer) {
  */
 void deserialize_music(char *token, music_t *music, char *saveptr) {
     int channelCount = 0;
+    scale_t scale = init_scale();
     sscanf(token, "%ld %hd", &music->date.tv_sec, &music->bpm);
     while (token != NULL && channelCount < MUSIC_MAX_CHANNELS) {
         token = strtok_r(NULL, "\n", &saveptr);
@@ -729,6 +730,7 @@ void deserialize_music(char *token, music_t *music, char *saveptr) {
                 // on récupère les notes
                 note_t *note = &channel->notes[line];
                 sscanf(token, "%d %hd %hd %d %d", &line, &note->id, &note->octave, (int *)&note->instrument, (int *)&note->time);
+                note->frequency = get_note_freq(note->id, &scale);
                 update_channel_nbNotes(channel, line);
                 token = strtok_r(NULL, "\n", &saveptr);
             }
