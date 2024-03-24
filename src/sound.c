@@ -3,6 +3,14 @@
 /*                   E N T Ê T E S    S T A N D A R D S                     */
 /* ------------------------------------------------------------------------ */
 
+/**
+ * \fn short sine_sound(int time, int amplitude , int phase, double freq ) 
+ * \brief retourne la valeur de sin 
+ * \param short *buffer buffer de short pour la note
+ * \param size_t sample_count nb d'échantillonage
+ * \param double freq fréquence d'échantillonage
+ */
+double sine_sound(double time, double amplitude , double phase, double freq );
 
 /**
  * \fn short *sine_wave() 
@@ -48,6 +56,34 @@ short *triangle_wave(short *buffer, size_t sample_count, double freq);
  * \param double freq fréquence d'échantillonage
  */
 short *warm_wave(short *buffer, size_t sample_count, double freq);
+
+/**
+ * \fn short **organ_wave() 
+ * \brief joue une note en orgue 
+ * \param short *buffer buffer de short pour la note
+ * \param size_t sample_count nb d'échantillonage
+ * \param double freq fréquence d'échantillonage
+ */
+short *organ_wave(short *buffer, size_t sample_count, double freq);
+
+
+/**
+ * \fn  noteToFreq()
+ * \brief transforme une note en fréquence
+ * \param note_t note note à jouer
+ * \return frequence de la note en double
+ */
+short *sinphaser_wave(short *buffer,size_t sample_count, double freq);
+
+/**
+ * @fn piano_wave()
+ * @brief joue une note en piano
+ * @param short *buffer buffer de short pour la note
+ * @param size_t sample_count nb d'échantillonage
+ * @param double freq fréquence d'échantillonage
+ * @return short *buffer
+ */
+short *piano_wave(short *buffer, size_t sample_count, double freq);
 
 /**
  * \fn short **silent_wave() 
@@ -103,21 +139,12 @@ short *organ_wave(short *buffer, size_t sample_count, double freq);
 
 
 /**
- * \fn short sine_sound(int time, int amplitude , int phase, double freq ) 
- * \brief retourne la valeur de sin 
- * \param short *buffer buffer de short pour la note
- * \param size_t sample_count nb d'échantillonage
- * \param double freq fréquence d'échantillonage
- */
-short sine_sound(int time, int amplitude , int phase, double freq );
-
-/**
  * \fn  noteToFreq()
  * \brief transforme une note en fréquence
  * \param note_t note note à jouer
  * \return frequence de la note en double
  */
-short *sinphaser_wave(short *buffer,size_t time,double freq);
+short *sinphaser_wave(short *buffer,size_t sample_count, double freq);
 
 /**
  * \fn  fuzz_effect()
@@ -125,7 +152,7 @@ short *sinphaser_wave(short *buffer,size_t time,double freq);
  * \param note_t note note à jouer
  * \return frequence de la note en double
  */
-short *fuzz_effect(short *buffer,size_t time);
+short *fuzz_effect(short *buffer,size_t sample_count);
 
 /**
  * \fn  compression_effect()
@@ -145,20 +172,20 @@ short * compression_effect(short *buffer,size_t time);
  */
 void init_sound(snd_pcm_t **pcm){
 
+    // On utilise le device par défaut
     snd_pcm_open(pcm, "default", SND_PCM_STREAM_PLAYBACK, 0);
+    // On créer une structure pour les paramètres du son
     snd_pcm_hw_params_t *hw_params;
     snd_pcm_hw_params_alloca(&hw_params);
-
-    snd_pcm_hw_params_any(*pcm, hw_params);
-    snd_pcm_hw_params_set_access(*pcm, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED);
-    snd_pcm_hw_params_set_format(*pcm, hw_params, SND_PCM_FORMAT_S16_LE);
-    snd_pcm_hw_params_set_channels(*pcm, hw_params, 1);
-    snd_pcm_hw_params_set_rate(*pcm, hw_params, 48000, 0);
-    snd_pcm_hw_params_set_periods(*pcm, hw_params, 10, 0);
-    //snd_pcm_hw_params_set_period_time(*pcm, hw_params, 100000, 0); // 0.1 seconds
-	snd_pcm_hw_params_set_period_time(*pcm, hw_params, 200000, 0); // 0.1 seconds
+    // On initialise les paramètres du son
+    snd_pcm_hw_params_any(*pcm, hw_params); // On initialise les paramètres à leur valeur par défaut
+    snd_pcm_hw_params_set_access(*pcm, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED); // On utilise un accès RW
+    snd_pcm_hw_params_set_format(*pcm, hw_params, SND_PCM_FORMAT_S16_LE); // On utilise un format 16 bits
+    snd_pcm_hw_params_set_channels(*pcm, hw_params, 1); // On utilise un seul canal
+    snd_pcm_hw_params_set_rate(*pcm, hw_params, SAMPLE_RATE, 0); // On utilise un taux d'échantillonnage de 48000 Hz
+    snd_pcm_hw_params_set_periods(*pcm, hw_params, 10, 0); // On utilise 10 périodes
+    snd_pcm_hw_params_set_period_time(*pcm, hw_params, 100000, 0); // 0.1 seconds
     snd_pcm_hw_params(*pcm, hw_params);
-    
 }
 
 /**
@@ -166,8 +193,8 @@ void init_sound(snd_pcm_t **pcm){
  * \brief termine le pcm
  */
 void end_sound(snd_pcm_t *pcm){
-	 snd_pcm_drain(pcm);
-    snd_pcm_close(pcm);
+	snd_pcm_drain(pcm); // On vide le tampon
+    snd_pcm_close(pcm); // On ferme le flux
 }
 
 
@@ -177,25 +204,20 @@ void end_sound(snd_pcm_t *pcm){
  * \param bpm le bpm de la musique 
  * \param note la note à jouer 
  */
-void play_note(note_t note,short bpm,snd_pcm_t *pcm,short effect){
-	
-	
+void play_note(note_t note,short bpm,snd_pcm_t *pcm,short effect) {
+
 	//fonction qui transforme un note_t en freq ( réelle )
 	double freq = noteToFreq(note);
-	
 	//calculer la durée de la note en fonction du bpm
 	size_t time = noteToTime(note,bpm);
-	
+    // On alloue un buffer pour stocker le sample de la note
 	short * buffer = (short*)malloc(sizeof(short)*time);
-	
+
+    // On joue la note
 	switch_instrument(buffer,note,freq,time,effect);//on joue la note 
 	
-
-        snd_pcm_writei(pcm, buffer, time);
-        //usleep(1000000 * durations[i]);
-
-	
-
+    // On écrit le buffer dans le flux
+    snd_pcm_writei(pcm, buffer, time);
 }
 
 /**
@@ -207,26 +229,40 @@ void play_note(note_t note,short bpm,snd_pcm_t *pcm,short effect){
  */
 short *sine_wave(short *buffer, size_t sample_count, double freq) {
 	int i;
+    double t; // Temps en secondes
     for (i = 0; i < sample_count; i++) {
-        buffer[i] = BASE_AMPLITUDE * sin(2 * M_PI * freq * ((double)i / SAMPLE_RATE));
+        t = ((double)i) / SAMPLE_RATE; // On calcule le temps en secondes
+        // On le multiplie par BASE_AMPLITUDE pour le mettre à l'échelle
+        buffer[i] = BASE_AMPLITUDE * sine_sound(t, 1, 0, freq); // Création du signal sinusoïdal
     }
     return buffer;
 }
 
 
-short *sinphaser_wave(short *buffer,size_t time,double freq){
+short *sinphaser_wave(short *buffer,size_t sample_count,double freq){
 	int i;
-	for(i=0;i<time;i++){
-	
-		buffer[i] = sine_sound(i,BASE_AMPLITUDE , 0 , freq ) + sine_sound( i, BASE_AMPLITUDE ,1/(freq*2),  freq );
+    double t;
+	for(i=0;i<sample_count;i++){
+        t = ((double)i) / SAMPLE_RATE; // On calcule le temps en secondes
+        double sine1 = sine_sound(t, 1, 0, freq);
+        double sine2 = sine_sound(i, 1, 1/(freq*2), freq); // pk 1/(freq*2) t inaudible la 
+        //double sine2 = sine_sound(t, 1, M_PI/4,freq); // on tente avec une phase de pi/4 
+		buffer[i] = BASE_AMPLITUDE * (sine1 + sine2);
 	
 	}
 	return buffer;
 }
 
-short sine_sound(int time, int amplitude , int phase, double freq ){
-	
-	short result = amplitude * sin(2 * M_PI * freq * ((double)time/ SAMPLE_RATE) + phase );
+/**
+ * @brief Fonction qui retourne la valeur d'un sinus à un temps donné
+ * @param time Le temps auquel on veut évaluer le sinus (en échantillons)
+ * @param amplitude l'amplitude du sinus
+ * @param phase la phase du sinus
+ * @param freq La fréquence du sinus
+ * @return double 
+ */
+double sine_sound(double time, double amplitude , double phase, double freq ){
+	double result = amplitude * sin((double)(2*M_PI*freq * time + phase) );
 	return result;
 }
 
@@ -238,41 +274,35 @@ short sine_sound(int time, int amplitude , int phase, double freq ){
  * \param double freq fréquence d'échantillonage
  */
 short *organ_wave(short *buffer, size_t sample_count, double freq){
-	int i,j;
-	
-	short * buffer1 = (short*)malloc(sizeof(short)*sample_count);
-		
-		
-		short * buffer2 = (short*)malloc(sizeof(short)*sample_count);
-	
-		
-		
-		short * buffer3 =(short*)malloc(sizeof(short)*sample_count);
-	
-		
-		short * buffer4 =(short*)malloc(sizeof(short)*sample_count);
-		
-		
-		short * buffer5 =(short*)malloc(sizeof(short)*sample_count);
-	
+	int i;
+    double sinus1, sinus2, sinus3, sinus4, sinus5, sinus6, sinus7, sinus8, sinus9;
+    double drawbar16 = freq / 2.0;
+    double drawbar5N1T3 = drawbar16 * 3.0;
+    double drawbar8 = freq;
+    double drawbar4 = freq * 2.0;
+    double drawbar2N2T3 = freq * 3.0;
+    double drawbar2 = freq * 4.0;
+    double drawbar1N3 = freq * 5.0;
+    double drawbar1N1T3 = freq * 6.0;
+    double drawbar1 = freq * 8.0;
+    double t;
+    //  {0, 8, 4, 0, 0, 0, 0, 4, 0};
+
 	for (i = 0; i < sample_count; i++) {
-        buffer[i] = BASE_AMPLITUDE * sin(2 * M_PI * (freq) * ((double)i / SAMPLE_RATE));
-        
-        buffer1[i] = BASE_AMPLITUDE * sin(2 * M_PI * freq*2 * ((double)i / SAMPLE_RATE));
-        
-        buffer2[i] = BASE_AMPLITUDE * sin(2 * M_PI * freq*3 * ((double)i / SAMPLE_RATE));
-        
-        buffer3[i] = BASE_AMPLITUDE * sin(2 * M_PI * freq*2/3 * ((double)i / SAMPLE_RATE));
-        
-        buffer4[i] = BASE_AMPLITUDE * sin(2 * M_PI * freq*6 * ((double)i / SAMPLE_RATE));
-        
-        buffer1[i] = BASE_AMPLITUDE * sin( M_PI * freq *4 *((double)i / SAMPLE_RATE));
-        
-        buffer[i]=buffer2[i]+buffer1[i]+buffer[i]+buffer4[i]+buffer5[i]+buffer3[i];
+        t = (double)i / SAMPLE_RATE;
+        sinus1 = sine_sound(t, 0, 0.0, drawbar16) * (0)/8;
+        sinus2 = sine_sound(t, 1, 0.0, drawbar5N1T3);
+        sinus3 = sine_sound(t, 0.5, 0.0, drawbar8);
+        sinus4 = sine_sound(t, 0, 0.0, drawbar4);
+        sinus5 = sine_sound(t, 0, 0.0, drawbar2N2T3);
+        sinus6 = sine_sound(t, 0, 0.0, drawbar2);
+        sinus7 = sine_sound(t, 0, 0.0, drawbar1N3);
+        sinus8 = sine_sound(t, 0.5, 0.0, drawbar1N1T3);
+        sinus9 = sine_sound(t, 0, 0.0, drawbar1);
+
+        buffer[i]= BASE_AMPLITUDE * (sinus1 + sinus2 + sinus3 + sinus4 + sinus5 + sinus6 + sinus7 + sinus8 + sinus9);
     }
-		
-		
-		
+
 	/*	
 	FILE* file = fopen("mongrospcm.raw", "wb");
     if (file == NULL) {
@@ -282,12 +312,7 @@ short *organ_wave(short *buffer, size_t sample_count, double freq){
 
     fwrite(buffer, sizeof(short), sample_count, file);
     fclose(file);*/
-		
-	free(buffer2);	
-	free(buffer1);
-	free(buffer3);
-	free(buffer4);
-	free(buffer5);
+
 	return buffer;
 }
 
@@ -356,18 +381,48 @@ short *triangle_wave(short *buffer, size_t sample_count, double freq) {
 short *warm_wave(short *buffer, size_t sample_count, double freq) {
 	int i = 0;
     for (i = 0; i < sample_count; i++) {
-        double t = ((double)i / SAMPLE_RATE);
         double value = 0.0;
-
+        double t = ((double)i / SAMPLE_RATE) * freq;
         // Somme des sinus harmoniques
         int harmonics = 1;
         for ( harmonics = 1;harmonics <= 10; harmonics++) {
-            value += sin(2 * M_PI * freq * harmonics * t) / harmonics;
+            value += sine_sound(t, 1, 0, freq * harmonics) / harmonics;
         }
 
         buffer[i] = BASE_AMPLITUDE * value; // Ajustez l'amplitude selon vos besoins
     }
     return buffer;
+}
+
+double random_uniform() {
+    return ((double)rand() / RAND_MAX) * 2.0 - 1.0; // Génère des valeurs aléatoires entre -1 et 1
+}
+
+/**
+ * @fn piano_wave()
+ * @brief joue une note en piano
+ * @param short *buffer buffer de short pour la note
+ * @param size_t sample_count nb d'échantillonage
+ * @param double freq fréquence d'échantillonage
+ * @return short *buffer
+ */
+short *piano_wave(short *buffer, size_t sample_count, double freq) {
+    // Tentative de piano par synthèse additive
+    // PS : c'est foireux
+    double amplitude[] = {1.0, 0.5, 0.3, 0.2, 0.1};
+    double phase[] = {0.0, 0.0, 0.0, 0.0, 0.0};
+    double harmonics[] = {1.0, 2.5, 3.5, 1.5, 5.5};
+    double t, result;
+    size_t i, j;
+
+    for (i = 0; i < sample_count; i++) {
+        t = (double)i / SAMPLE_RATE;
+        result = 0.0;
+        for (j = 0; j < 5; j++) {
+            result += sine_sound(t, amplitude[j], phase[j], freq * harmonics[j]);
+        }
+        buffer[i] = BASE_AMPLITUDE * result;
+    }
 }
 
 /**
@@ -454,9 +509,13 @@ void switch_instrument(short *buffer,note_t note,double freq,size_t time,short e
 		case INSTRUMENT_SINPHASER:
 			sinphaser_wave(buffer,time,freq);
 		break;
+
+        case INSTRUMENT_PIANO:
+            piano_wave(buffer, time, freq);
+        break;
 		
 		default : 
-				silent_wave(buffer,time,freq);
+			silent_wave(buffer,time,freq);
 		break;
 		
 	}
