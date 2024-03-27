@@ -14,6 +14,7 @@
 #include "wiringseq.h"
 #include "request.h"
 #include <time.h>   
+#include "mysyscall.h"
 
 #define RPI_COLS 106 /*!< Nombre de colonnes de la fenêtre sur le RPI */
 #define RPI_LINES 29 /*!< Nombre de lignes de la fenêtre sur le RPI */

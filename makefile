@@ -3,13 +3,13 @@
 # Default Raspberry Pi IP address
 IP_RPI?=192.168.234.131
 # Path to cross-compiler binaries
-PATH_CC_BINS?=/home/lukas/LE3/OCC/tools-master/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin
+PATH_CC_BINS?=/home/tomas/Bureau/'Objets Connectés'/tools-master/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin
 # Default target fake root directory
-TARGET_FAKEROOT_RPI?=/home/lukas/LE3/OCC/fakeroot 
+TARGET_FAKEROOT_RPI?=
 # Compiler command
 CCC?=$(PATH_CC_BINS)/arm-linux-gnueabihf-gcc-4.8.3
 # Programs to build
-PROG=pimusiic pi2iserv
+PROG=pimusiic pi2iserv rfidReader
 # Path to rpi binaries
 BIN_RPI_DIR=bin-pi
 # Path to pc binaries
@@ -90,6 +90,11 @@ $(OBJ_DIR)/pimusiic-pi.o: $(SRC_DIR)/pimusiic.c
 	@mkdir -p $(OBJ_DIR)
 	@echo "\t\tCompilation du fichier objet $@"
 	@$(CCC) -o $@ -c  $< -I$(INCLUDE_DIR) -g
+	
+$(OBJ_DIR)/rfidReader-pi.o: $(SRC_DIR)/rfidReader.c
+	@mkdir -p $(OBJ_DIR)
+	@echo "\t\tCompilation du fichier objet $@"
+	@$(CCC) -o $@ -c  $< -I$(INCLUDE_DIR) -g
 
 $(OBJ_DIR)/pi2iserv-pi.o: $(SRC_DIR)/pi2iserv.c
 	@mkdir -p $(OBJ_DIR)
@@ -114,7 +119,7 @@ $(OBJ_DIR)/%-pi.o: $(SRC_DIR)/%.c $(INCLUDE_DIR)/%.h
 
 # installation rule
 install:
-	scp -r ressources $(BIN_RPI_DIR) pi@$(IP_RPI):PiMusiic
+	scp -r ressources $(BIN_RPI_DIR) pi@$(IP_RPI):testTomas/bin-pi
 
 # Clean rule
 clean:

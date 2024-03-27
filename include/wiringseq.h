@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <stdint.h>
+#include "mysyscall.h"
 
 /* ------------------------------------------------------------------------ */
 /*              C O N S T A N T E S     S Y M B O L I Q U E S               */
@@ -165,5 +166,6 @@ int read_proximity_sensor();
  * GRP1_ATOME (2023) : Urban Prevost & Antoine Jedrezak
  */
 void init_rfid();
+
 
 #endif
