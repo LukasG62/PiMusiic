@@ -21,13 +21,16 @@ int main() {
 	sem_login = create_named_sem("SEM_LOGIN", 0);
 	sem_tag =  create_named_sem("SEM_TAG", 0);
 	
+	init_rfid();
+	init_wiringpi();
+	
 	
 	while(1){
 		fprintf(stderr,"On attend la ressource\n");
 		wait_sem(sem_login);
 		fprintf(stderr,"On prend la sémaphore\n");
     	char rfid[20] = "";
-    	init_wiringpi();
+
    		read_rfid(rfid);
    		FILE *fichier;
     	fichier = fopen("ressources/tag", "w"); // Ouvre le fichier en mode écriture ("w")

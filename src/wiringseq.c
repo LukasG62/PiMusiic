@@ -37,9 +37,6 @@ void init_wiringpi(){
 		pinMode(button_col[i],OUTPUT);
 		digitalWrite(button_col[i],HIGH);
 	}
-
-	init_rfid();
-	
 }
 
 /**
