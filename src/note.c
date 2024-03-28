@@ -161,11 +161,11 @@ void instrument2str(instrument_t instrument, char *str) {
 		case INSTRUMENT_NA:
 			strcpy(str, INSTRUMENT_NA_NAME);
 			break;
-		case INSTRUMENT_SAWTOOTH:
-			strcpy(str, INSTRUMENT_SAWTOOTH_NAME);
-			break;
 		case INSTRUMENT_SIN:
 			strcpy(str, INSTRUMENT_SIN_NAME);
+			break;
+		case INSTRUMENT_SAWTOOTH:
+			strcpy(str, INSTRUMENT_SAWTOOTH_NAME);
 			break;
 		case INSTRUMENT_TRIANGLE:
 			strcpy(str, INSTRUMENT_TRIANGLE_NAME);
@@ -173,8 +173,14 @@ void instrument2str(instrument_t instrument, char *str) {
 		case INSTRUMENT_SQUARE:
 			strcpy(str, INSTRUMENT_SQUARE_NAME);
 			break;
-		case INSTRUMENT_STEPMOTOR:
-			strcpy(str, INSTRUMENT_STEPMOTOR_NAME);
+		case INSTRUMENT_ORGAN:
+			strcpy(str, INSTRUMENT_ORGAN_NAME);
+			break;
+		case INSTRUMENT_PIANO:
+			strcpy(str, INSTRUMENT_PIANO_NAME);
+			break;
+		case INSTRUMENT_SINPHASER:
+			strcpy(str, INSTRUMENT_SINPHASER_NAME);
 			break;
 		
 		default:
@@ -237,6 +243,14 @@ void note2str(note_t note, char *str) {
 	}
 }
 
+/**
+ * @fn update_channel_nbNotes(channel_t *channel, int noteIndex);
+ * @brief Mettre à jour le nombre de notes dans un channel
+ * @param channel le channel à mettre à jour
+ * @param noteIndex l'index de la note courante
+ * Ce script met à jour le nombre de notes dans un channel
+ * Pour cela il compare la note passée en paramètre avec la dernière note du channel
+ */
 void update_channel_nbNotes(channel_t *channel, int noteIndex) {
 	note_t currentNote = channel->notes[noteIndex];
 	if(noteIndex >= channel->nbNotes) {

@@ -510,7 +510,7 @@ void sequencer_nav_right(sequencer_nav_t *nav) {
  * @brief Création de la structure de navigation du séquenceur
  * @return sequencer_nav_t 
  */
-sequencer_nav_t create_sequencer_nav() {
+sequencer_nav_t create_sequencer_nav(int playMode) {
     sequencer_nav_t nav;
     nav.col = SEQUENCER_NAV_COL_LINE;
     nav.ch = SEQUENCER_NAV_CH1;
@@ -519,7 +519,7 @@ sequencer_nav_t create_sequencer_nav() {
         nav.start[i] = 0;
         nav.lines[i] = 0;
     }
-    nav.playMode = 0;
+    nav.playMode = playMode;
     //nav.line = 0;
     return nav;
 }
@@ -549,7 +549,7 @@ choices_t show_sequencer(music_t *music, char *rfid) {
     WINDOW *channelWin[MUSIC_MAX_CHANNELS];
 
     // Des variables pour la navigation dans le séquenceur
-    sequencer_nav_t seqNav = create_sequencer_nav();
+    sequencer_nav_t seqNav = create_sequencer_nav(0);
     scale_t scale = init_scale(); // Initialisation de la gammes
     // On dessine chaque fenêtre
     show_sequencer_info(seqInfo, music, 0, need2save);
@@ -579,6 +579,14 @@ choices_t show_sequencer(music_t *music, char *rfid) {
             case KEY_DOWN:
                 if(seqNav.col == SEQUENCER_NAV_COL_LINE) {
                     sequencer_nav_down(&seqNav);
+                    // Si la note actuelle est vide, on la remplit avec l'instrument de la note précédente (si elle existe)
+                    note = &(music->channels[seqNav.ch].notes[seqNav.lines[seqNav.ch]]);
+                    if(note->id == NOTE_NA_ID) {
+                        note_t *prevNote = &(music->channels[seqNav.ch].notes[seqNav.lines[seqNav.ch] - 1]);
+                        if(prevNote->id != NOTE_NA_ID) {
+                            cp_note(note, *prevNote);
+                        }
+                    }
                     break;
                 }
                 // Sinon modification de la note
@@ -625,6 +633,7 @@ choices_t show_sequencer(music_t *music, char *rfid) {
 
             case KEY_BUTTON_CH3NPLAY:
                 if(btnMode == EDIT_MODE) {
+                    play_music(channelWin, music);
                     break;
                 } 
                 // On change de channel
@@ -668,6 +677,105 @@ int getchr_wiringpi()
     if(IS_BUTTON_PRESSED(bitmap, BUTTON_CH2NQUIT)) return KEY_BUTTON_CH2NQUIT;
     if(IS_BUTTON_PRESSED(bitmap, BUTTON_CH1NSAVE)) return KEY_BUTTON_CH1NSAVE;
     return ERR;
+}
+
+/**
+ * @fn void play_music(music_t *music)
+ * @brief Joue la musique et affiche les lignes jouées
+ */
+void play_music(WINDOW **channelWin, music_t *music) {
+    pthread_t threads[MUSIC_MAX_CHANNELS];
+    sem_t syncSem; // Sémaphore de synchronisation
+    sem_t finishSem; // Sémaphore de fin
+    sequencer_nav_t seqNav = create_sequencer_nav(1);
+    int i, ret, finishCount = 0;
+    // On attend que tout est en place pour jouer la musique
+    sem_init(&syncSem, 0, 0);
+    sem_init(&finishSem, 0, 0);
+    fprintf(stderr, "PLAYING MUSIC\n");
+    for(i = 0; i < MUSIC_MAX_CHANNELS; i++) {
+        // TODO : faire une structure pour les arguments et une fonction pour la remplir
+        channel_thread_args_t *args = create_channel_thread_args(&syncSem, &finishSem, &seqNav, music, i);
+        pthread_create(&threads[i], NULL, play_channel, (void *) args);
+        pthread_detach(threads[i]);
+        // mettre la priorité des threads aux maximum
+        struct sched_param param;
+        param.sched_priority = sched_get_priority_max(SCHED_FIFO);
+        pthread_setschedparam(threads[i], SCHED_FIFO, &param);
+    }
+
+    for(i = 0; i < MUSIC_MAX_CHANNELS; i++) {
+        // On débloque les threads
+        sem_post(&syncSem);
+    }
+    // On essaye de prendre MUSIC_MAX_CHANNELS sémaphores de manière non bloquante
+    
+    while(finishCount < MUSIC_MAX_CHANNELS) {
+        ret = sem_trywait(&finishSem);
+        // Si on a réussi à prendre un sémaphore
+        if(ret == 0) finishCount++;
+        // On rafraichit les fenêtres
+        //fprintf(stderr, "FINISH COUNT : %d\n", finishCount);
+
+        show_sequencer_channels(channelWin, music, &seqNav);
+    }
+
+    // On libère les sémaphores
+    sem_destroy(&syncSem);
+    sem_destroy(&finishSem);
+}
+
+/**
+ * @brief play_channel(void *channelId)
+ * @brief Joue un channel et modifie le navigateur pour afficher la ligne jouée
+ */
+void *play_channel(void *args) {
+    // On récupère les arguments
+    channel_thread_args_t *channelArgs = (channel_thread_args_t *) args;
+    sem_t *syncSem = channelArgs->syncSem;
+    sem_t *finishSem = channelArgs->finishSem;
+    sequencer_nav_t *seqNav = channelArgs->seqNav;
+    music_t *music = channelArgs->music;
+    int channelId = channelArgs->channel;
+    channel_t *channel = &(music->channels[channelId]);
+    int i;
+    snd_pcm_t *pcm;
+    //int effect = read_proximity_sensor();
+    int effect = 0;
+    // On initialise le pcm
+    init_sound(&pcm);
+    // On attend que tout le monde soit prêt
+    sem_wait(syncSem);
+    for(i = 0; i < channel->nbNotes; i++) {
+        // On joue la note
+        play_note(channel->notes[i], music->bpm, pcm, effect);
+        // On change la ligne jouée
+        // TODO : changer sequencer_nav_down pour ajouter le channel en paramètre -1 = current channel
+        if (seqNav->lines[channelId] >= seqNav->start[channelId] + SEQUENCER_CH_LINES - 4) seqNav->start[channelId] = seqNav->start[channelId] + SEQUENCER_CH_LINES - 3; // On défile vers le bas
+        if (seqNav->lines[channelId] < CHANNEL_MAX_NOTES - 1) seqNav->lines[channelId]++;
+    }
+    // On libère le pcm
+    end_sound(pcm);
+    // On libère le sémaphore de fin
+    sem_post(finishSem);
+    free(channelArgs);
+    pthread_exit(NULL);
+}
+
+/**
+ * @brief create_channel_thread_args(sem_t *syncSem, sem_t *finishSem, sequencer_nav_t *seqNav, music_t *music, int channel)
+ * @brief Crée les arguments pour le thread de channel
+ * @return channel_thread_args_t 
+ * @note Les arguments doivent être libérés après utilisation
+ */
+channel_thread_args_t *create_channel_thread_args(sem_t *syncSem, sem_t *finishSem, sequencer_nav_t *seqNav, music_t *music, int channel) {
+    channel_thread_args_t *args = malloc(sizeof(channel_thread_args_t));
+    args->syncSem = syncSem;
+    args->finishSem = finishSem;
+    args->seqNav = seqNav;
+    args->music = music;
+    args->channel = channel;
+    return args;
 }
 
 /**********************************************************************************************************************/
@@ -763,7 +871,7 @@ void init_sequencer_channels(WINDOW **channelWin, music_t *music) {
     channelWin[1] = newwin(SEQUENCER_CH_LINES, SEQUENCER_CH_COLS, SEQUENCER_CH_Y0, SEQUENCER_CH2_X0);
     channelWin[2] = newwin(SEQUENCER_CH_LINES, SEQUENCER_CH_COLS, SEQUENCER_CH_Y0, SEQUENCER_CH3_X0);
     
-    sequencer_nav_t seqNav = create_sequencer_nav();
+    sequencer_nav_t seqNav = create_sequencer_nav(0);
     for(i = 0; i < MUSIC_MAX_CHANNELS; i++) {
         WINDOW *ch = channelWin[i];
         // On efface les fenêtres

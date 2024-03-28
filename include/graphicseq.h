@@ -13,6 +13,8 @@
 #include "mpp.h"
 #include "wiringseq.h"
 #include "request.h"
+#include "mysyscall.h"
+#include "sound.h"
 #include <time.h>   
 #include "mysyscall.h"
 
@@ -150,6 +152,16 @@ typedef struct
     int playMode;                    /*!< Mode de lecture */
 } sequencer_nav_t;
 
+
+// void *args[] = {&syncSem, &finishSem, &seqNav, music, i};
+typedef struct {
+    sem_t *syncSem;
+    sem_t *finishSem;
+    sequencer_nav_t *seqNav;
+    music_t *music;
+    int channel;
+} channel_thread_args_t;
+
 /**
  * \fn void init_ncurses()
  * \brief Initialisation de ncurses et de la fenêtre
@@ -253,7 +265,7 @@ void sequencer_nav_right(sequencer_nav_t *nav);
  * @brief Création de la structure de navigation du séquenceur
  * @return sequencer_nav_t 
  */
-sequencer_nav_t create_sequencer_nav();
+sequencer_nav_t create_sequencer_nav(int playMode);
 
 /**
  * @fn void show_sequencer(music_t *music, char *connected)
@@ -273,4 +285,26 @@ choices_t show_sequencer(music_t *music, char *connected);
  */
 int getchr_wiringpi();
 
+
+/**
+ * @fn void play_music(music_t *music)
+ * @brief Joue la musique et affiche les lignes jouées
+ */
+void play_music(WINDOW **channelWin, music_t *music);
+
+/**
+ * @brief play_channel(void *channelId)
+ * @brief Joue un channel et modifie le navigateur pour afficher la ligne jouée
+ */
+void *play_channel(void *channelId);
+
+/**
+ * @brief create_channel_thread_args(sem_t *syncSem, sem_t *finishSem, sequencer_nav_t *seqNav, music_t *music, int channel)
+ * @brief Crée les arguments pour le thread de channel
+ * @return channel_thread_args_t 
+ * @note Les arguments doivent être libérés après utilisation
+ */
+channel_thread_args_t *create_channel_thread_args(sem_t *syncSem, sem_t *finishSem, sequencer_nav_t *seqNav, music_t *music, int channel);
+
 #endif // GRAPHIC_SEQ_H
+

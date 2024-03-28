@@ -74,6 +74,9 @@ typedef enum {
 #define INSTRUMENT_SAWTOOTH_NAME "SAW " /*!< Nom de l'instrument signal en dent de scie */
 #define INSTRUMENT_TRIANGLE_NAME "TRI " /*!< Nom de l'instrument signal en triangle */
 #define INSTRUMENT_SQUARE_NAME "SQR " /*!< Nom de l'instrument signal carré */
+#define INSTRUMENT_ORGAN_NAME "ORGN" /*!< Nom de l'instrument orgue */
+#define INSTRUMENT_PIANO_NAME "PIAN" /*!< Nom de l'instrument piano */
+#define INSTRUMENT_SINPHASER_NAME "SPHS" /*!< Nom de l'instrument signal sinusoïdale avec phaser */
 #define INSTRUMENT_NA_NAME " -- " /*!< Nom de l'instrument non disponible */
 
 /* ------------------------------------------------------------------------ */
@@ -87,15 +90,14 @@ typedef enum {
  */
 typedef enum {
 	INSTRUMENT_NA=0, /*!< Pas d’instrument*/
-	INSTRUMENT_STEPMOTOR, /*!< Utilisation du moteur pas à pas */
 	INSTRUMENT_SIN,/*!< Utilisation d’un signal sinusoïdale */
-	INSTRUMENT_SAWTOOTH,/*!< Utilisation d’un signal en dent de scie*/
-	INSTRUMENT_TRIANGLE, /*!< Utilisation d’un signal en triangle*/
-	INSTRUMENT_SQUARE, /*!< Utilisation d’un signal carré*/
-	INSTRUMENT_ORGAN,
-	INSTRUMENT_PIANO, 
-	INSTRUMENT_SINPHASER,
-	INSTRUMENT_NB /*!< Nombre d’instruments disponibles*/
+	INSTRUMENT_SAWTOOTH,/*!< Utilisation d’un signal en dent de scie */
+	INSTRUMENT_TRIANGLE, /*!< Utilisation d’un signal en triangle */
+	INSTRUMENT_SQUARE, /*!< Utilisation d’un signal carré */
+	INSTRUMENT_ORGAN,  /*!< Utilisation d’un orgue */
+	INSTRUMENT_PIANO,  /*!< Utilisation d’un piano */
+	INSTRUMENT_SINPHASER, /*!< Utilisation d’un signal sinusoïdale avec phaser */
+	INSTRUMENT_NB /*!< Nombre d’instruments disponibles */
 }instrument_t;
 
 

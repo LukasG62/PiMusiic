@@ -123,15 +123,14 @@ void display_pthread_attr(pthread_attr_t *attr, char *prefix)
  * @return Le thread créé
  * @details La fonction créer un thread
  */
-pthread_t create_thread(pthread_t *thread, void *(*start_routine)(void *), long thread_number) {
+pthread_t create_thread(pthread_t *thread, void *(*start_routine)(void *), long thread_number, int state) {
     // Creation de l'attribut du thread
     pthread_attr_t attr;
     pthread_t tid;
 
     // Initialisation de l'attribut du thread
     pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED); // On met le thread en mode detached
-
+    pthread_attr_setdetachstate(&attr, state); // On met le thread en mode detached
     // Création du thread
     CHECK_T(tid = pthread_create(thread, &attr, start_routine, (void *)thread_number), "PTHREAD_CREATE");
     pthread_attr_destroy(&attr); // Destruction de l'attribut du thread

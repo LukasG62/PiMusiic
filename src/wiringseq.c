@@ -38,7 +38,7 @@ void init_wiringpi(){
 		digitalWrite(button_col[i],HIGH);
 	}
 
-	//init_rfid();
+	init_rfid();
 	
 }
 
@@ -146,7 +146,7 @@ void display_bpm(int bpm){
 char * read_rfid(char * tagRfid){
 	int 	tmp;
 	char    *p, sn_str[23];         // to hold [serial] as a string
-	init_rfid();
+	//init_rfid();
 	
 	// wait for card
 	while (get_card_info() != TAG_OK) usleep(5000);
@@ -217,6 +217,4 @@ void init_rfid() {
     /* read & set GID and UID from config file */
     if (read_conf_uid()!= 0) close_out(1);
 }
-
-
 
