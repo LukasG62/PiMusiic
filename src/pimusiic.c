@@ -9,6 +9,7 @@
 #include "wiringseq.h"
 #include "request.h"
 #include "sound.h"
+#include "mysyscall.h"
 
 /**
  * \fn void clean_up()
@@ -23,6 +24,8 @@ void clean_up() {
 
 int main() {
     atexit(clean_up);
+    
+	
     char pseudo[20] = "";
     char rfid[20] = "";
     music_t music;

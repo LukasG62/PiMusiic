@@ -159,6 +159,7 @@ char * read_rfid(char * tagRfid){
 
 	//close_out(0);
 	return tagRfid;
+	
 }
 
 
@@ -197,7 +198,7 @@ int read_proximity_sensor(){
 /**
  * @fn void init_rfid()
  * @brief Fonction d'initialisation du RFID
- * Cette fonction a été repris d'un groupe précédent
+ * Cette fonction a été reprise d'un groupe précédent
  * GRP1_ATOME (2023) : Urban Prevost & Antoine Jedrezak
  */
 void init_rfid() {
@@ -214,5 +215,6 @@ void init_rfid() {
     InitRc522();
 
     /* read & set GID and UID from config file */
-    //if (read_conf_uid()!= 0) close_out(1);
+    if (read_conf_uid()!= 0) close_out(1);
 }
+

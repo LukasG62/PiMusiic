@@ -138,6 +138,12 @@ void print_sequencer_lines(WINDOW *win, short channelId, music_t *music, sequenc
 */
 void change_sequencer_note(note_t *note, short col, scale_t scale, int isUp);
 
+/**
+ * @fn void res_read_rfid()
+ * @brief lecture du rfid avec ressources
+ */
+void res_read_rfid(char *rfid);
+
 /**********************************************************************************************************************/
 /*                                           Public Fonction Definitions                                              */
 /**********************************************************************************************************************/
@@ -223,7 +229,9 @@ choices_t show_connection_menu(char *rfid, char *username) {
     // Affichage du menu
     init_menu("Connection", "Please scan your badge", 0);
     // On récupère le badge RFID
-    read_rfid(rfid);
+    	//on post la ressource pour activer le rfid
+    	res_read_rfid(rfid);
+    
     // On affiche le badge RFID
     attron(COLOR_PAIR(COLOR_PAIR_MENU_PROMPT));
     mvprintw(3, 4, "Your badge : %-30s", rfid);
@@ -1169,3 +1177,38 @@ void show_sequencer_channels(WINDOW **channelWin, music_t *music, sequencer_nav_
         print_sequencer_lines(channelWin[i], i, music, seqNav);
     }
 }
+
+
+
+/**
+ * @fn void res_read_rfid()
+ * @brief lecture du rfid avec ressources
+ */
+void res_read_rfid(char *rfid){
+		sem_t * sem_login = open_named_sem("SEM_LOGIN");
+		sem_t * sem_tag =  open_named_sem("SEM_TAG");
+    	post_sem(sem_login);
+    	
+    	//on wait la ressource pour lire le fichier
+    	wait_sem(sem_tag);
+		FILE *fichier;
+    	fichier = fopen("ressources/tag", "r"); // Ouvre le fichier en mode écriture ("r")
+
+    	if (fichier != NULL) { // Vérifie si le fichier a été ouvert avec succès
+        // Lit la valeur RFID depuis le fichier
+        if (fscanf(fichier, "%s", rfid) == 1) {
+            // Affiche la valeur RFID lue depuis le fichier
+            printf("La valeur RFID lue depuis le fichier est : %s\n", rfid);
+        } else {
+            printf("Erreur lors de la lecture du fichier.\n");
+            return 1; // Quitte le programme avec un code d'erreur
+        }
+        // Ferme le fichier
+        fclose(fichier);
+    } else {
+        // En cas d'erreur lors de l'ouverture du fichier
+        printf("Erreur lors de l'ouverture du fichier.\n");
+        return 1; // Quitte le programme avec un code d'erreur
+    }
+}
+

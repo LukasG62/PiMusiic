@@ -16,6 +16,7 @@
 #include "mysyscall.h"
 #include "sound.h"
 #include <time.h>   
+#include "mysyscall.h"
 
 #define RPI_COLS 106 /*!< Nombre de colonnes de la fenêtre sur le RPI */
 #define RPI_LINES 29 /*!< Nombre de lignes de la fenêtre sur le RPI */
@@ -284,6 +285,7 @@ choices_t show_sequencer(music_t *music, char *connected);
  */
 int getchr_wiringpi();
 
+
 /**
  * @fn void play_music(music_t *music)
  * @brief Joue la musique et affiche les lignes jouées
@@ -305,3 +307,4 @@ void *play_channel(void *channelId);
 channel_thread_args_t *create_channel_thread_args(sem_t *syncSem, sem_t *finishSem, sequencer_nav_t *seqNav, music_t *music, int channel);
 
 #endif // GRAPHIC_SEQ_H
+
