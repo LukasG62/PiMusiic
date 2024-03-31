@@ -138,11 +138,6 @@ void print_sequencer_lines(WINDOW *win, short channelId, music_t *music, sequenc
 */
 void change_sequencer_note(note_t *note, short col, scale_t scale, int isUp);
 
-/**
- * @fn void res_read_rfid()
- * @brief lecture du rfid avec ressources
- */
-void res_read_rfid(char *rfid);
 
 /**********************************************************************************************************************/
 /*                                           Public Fonction Definitions                                              */
@@ -229,9 +224,7 @@ choices_t show_connection_menu(char *rfid, char *username) {
     // Affichage du menu
     init_menu("Connection", "Please scan your badge", 0);
     // On récupère le badge RFID
-    	//on post la ressource pour activer le rfid
-    	res_read_rfid(rfid);
-    
+    res_read_rfid(rfid);
     // On affiche le badge RFID
     attron(COLOR_PAIR(COLOR_PAIR_MENU_PROMPT));
     mvprintw(3, 4, "Your badge : %-30s", rfid);
@@ -453,9 +446,12 @@ choices_t show_create_music_menu(music_t *music, char *rfid) {
  * @brief permet de passer d'une ligne à une autre dans le séquenceur
  * @param nav la structure de navigation
  */
-void sequencer_nav_up(sequencer_nav_t *nav) {
-    if (nav->lines[nav->ch] > 0) nav->lines[nav->ch]--;
-    if (nav->lines[nav->ch] < nav->start[nav->ch]) nav->start[nav->ch] = nav->start[nav->ch] - SEQUENCER_CH_LINES + 3; // On défile vers le haut
+void sequencer_nav_up(sequencer_nav_t *nav, int channelId) {
+    if(channelId == -1) {
+        channelId = nav->ch;
+    }
+    if (nav->lines[channelId] > 0) nav->lines[channelId]--;
+    if (nav->lines[nav->ch] < nav->start[channelId]) nav->start[channelId] = nav->start[channelId] - SEQUENCER_CH_LINES + 3; // On défile vers le haut
 }
 
 /**
@@ -463,9 +459,12 @@ void sequencer_nav_up(sequencer_nav_t *nav) {
  * @brief permet de passer d'une ligne à une autre dans le séquenceur
  * @param nav la structure de navigation
  */
-void sequencer_nav_down(sequencer_nav_t *nav) {
-    if (nav->lines[nav->ch] >= nav->start[nav->ch] + SEQUENCER_CH_LINES - 4) nav->start[nav->ch] = nav->start[nav->ch] + SEQUENCER_CH_LINES - 3; // On défile vers le bas
-    if (nav->lines[nav->ch] < CHANNEL_MAX_NOTES - 1) nav->lines[nav->ch]++;
+void sequencer_nav_down(sequencer_nav_t *nav, int channelId) {
+    if(channelId == -1) {
+        channelId = nav->ch;
+    }
+    if (nav->lines[channelId] >= nav->start[channelId] + SEQUENCER_CH_LINES - 4) nav->start[channelId] = nav->start[channelId] + SEQUENCER_CH_LINES - 3; // On défile vers le bas
+    if (nav->lines[channelId] < CHANNEL_MAX_NOTES - 1) nav->lines[channelId]++;
 }
 
 /**
@@ -567,7 +566,7 @@ choices_t show_sequencer(music_t *music, char *rfid) {
         switch(c) {
             case KEY_UP:
                 if(seqNav.col == SEQUENCER_NAV_COL_LINE) {
-                    sequencer_nav_up(&seqNav);
+                    sequencer_nav_up(&seqNav, -1);
                     break;
                 }
                 note = &(music->channels[seqNav.ch].notes[seqNav.lines[seqNav.ch]]);
@@ -578,16 +577,7 @@ choices_t show_sequencer(music_t *music, char *rfid) {
 
             case KEY_DOWN:
                 if(seqNav.col == SEQUENCER_NAV_COL_LINE) {
-                    sequencer_nav_down(&seqNav);
-                    // Si la note actuelle est vide, on la remplit avec l'instrument de la note précédente (si elle existe)
-                    note = &(music->channels[seqNav.ch].notes[seqNav.lines[seqNav.ch]]);
-                    if(note->id == NOTE_NA_ID) {
-                        note_t *prevNote = &(music->channels[seqNav.ch].notes[seqNav.lines[seqNav.ch] - 1]);
-                        if(prevNote->id != NOTE_NA_ID) {
-                            cp_note(note, *prevNote);
-                        }
-                    }
-                    break;
+                    sequencer_nav_down(&seqNav, -1);
                 }
                 // Sinon modification de la note
                 note = &(music->channels[seqNav.ch].notes[seqNav.lines[seqNav.ch]]);
@@ -640,6 +630,18 @@ choices_t show_sequencer(music_t *music, char *rfid) {
                 seqNav.lines[2] = seqNav.start[2] + seqNav.lines[seqNav.ch] - seqNav.start[seqNav.ch]; // On garde la même ligne (pas forcément le même start)
                 seqNav.ch = 2;
                 break;
+
+            case KEY_BUTTON_LINEUP:
+                sequencer_nav_up(&seqNav, -1);
+                break;
+            break;
+
+            case KEY_BUTTON_LINEDOWN:
+                sequencer_nav_down(&seqNav, -1);
+            break;
+
+            default:
+                break;
         }
         // On rafraichit les fenêtres
         show_sequencer_info(seqInfo, music, btnMode, need2save);
@@ -666,7 +668,7 @@ choices_t show_sequencer(music_t *music, char *rfid) {
  */
 int getchr_wiringpi()
 {
-    unsigned char bitmap = is_button_pressed();
+    bitmap_t bitmap = is_button_pressed();
     usleep(100000);
     if(IS_BUTTON_PRESSED(bitmap, BUTTON_UP)) return KEY_UP;
     if(IS_BUTTON_PRESSED(bitmap, BUTTON_LEFT)) return KEY_LEFT;
@@ -676,6 +678,9 @@ int getchr_wiringpi()
     if(IS_BUTTON_PRESSED(bitmap, BUTTON_CH3NPLAY)) return KEY_BUTTON_CH3NPLAY;
     if(IS_BUTTON_PRESSED(bitmap, BUTTON_CH2NQUIT)) return KEY_BUTTON_CH2NQUIT;
     if(IS_BUTTON_PRESSED(bitmap, BUTTON_CH1NSAVE)) return KEY_BUTTON_CH1NSAVE;
+    if(IS_BUTTON_PRESSED(bitmap, BUTTON_LINEUP)) return KEY_BUTTON_LINEUP;
+    if(IS_BUTTON_PRESSED(bitmap, BUTTON_LINEDOWN)) return KEY_BUTTON_LINEDOWN;
+
     return ERR;
 }
 
@@ -685,44 +690,46 @@ int getchr_wiringpi()
  */
 void play_music(WINDOW **channelWin, music_t *music) {
     pthread_t threads[MUSIC_MAX_CHANNELS];
+    sem_t show_sem[MUSIC_MAX_CHANNELS];
     sem_t syncSem; // Sémaphore de synchronisation
     sem_t finishSem; // Sémaphore de fin
     sequencer_nav_t seqNav = create_sequencer_nav(1);
-    int i, ret, finishCount = 0;
+    int i, finishCount = 0;
     // On attend que tout est en place pour jouer la musique
     sem_init(&syncSem, 0, 0);
     sem_init(&finishSem, 0, 0);
-    fprintf(stderr, "PLAYING MUSIC\n");
     for(i = 0; i < MUSIC_MAX_CHANNELS; i++) {
-        // TODO : faire une structure pour les arguments et une fonction pour la remplir
-        channel_thread_args_t *args = create_channel_thread_args(&syncSem, &finishSem, &seqNav, music, i);
+        sem_init(show_sem + i , 0, 0);
+        channel_thread_args_t *args = create_channel_thread_args(show_sem + i, &syncSem, &finishSem, &seqNav, music, i);
         pthread_create(&threads[i], NULL, play_channel, (void *) args);
-        pthread_detach(threads[i]);
         // mettre la priorité des threads aux maximum
         struct sched_param param;
         param.sched_priority = sched_get_priority_max(SCHED_FIFO);
         pthread_setschedparam(threads[i], SCHED_FIFO, &param);
     }
-
+    show_sequencer_channels(channelWin, music, &seqNav);
     for(i = 0; i < MUSIC_MAX_CHANNELS; i++) {
         // On débloque les threads
         sem_post(&syncSem);
     }
-    // On essaye de prendre MUSIC_MAX_CHANNELS sémaphores de manière non bloquante
-    
-    while(finishCount < MUSIC_MAX_CHANNELS) {
-        ret = sem_trywait(&finishSem);
-        // Si on a réussi à prendre un sémaphore
-        if(ret == 0) finishCount++;
-        // On rafraichit les fenêtres
-        //fprintf(stderr, "FINISH COUNT : %d\n", finishCount);
 
-        show_sequencer_channels(channelWin, music, &seqNav);
+    while(finishCount < MUSIC_MAX_CHANNELS) {
+        if(sem_trywait(&finishSem) == 0) finishCount++;
+
+        for(i = 0; i < MUSIC_MAX_CHANNELS; i++) {
+            if(sem_trywait(&show_sem[i]) == 0) {
+                print_sequencer_lines(channelWin[i], i, music, &seqNav);
+            }
+        }
     }
 
     // On libère les sémaphores
     sem_destroy(&syncSem);
     sem_destroy(&finishSem);
+    for(i = 0; i < MUSIC_MAX_CHANNELS; i++) {
+        sem_destroy(&show_sem[i]);
+    }
+
 }
 
 /**
@@ -732,27 +739,29 @@ void play_music(WINDOW **channelWin, music_t *music) {
 void *play_channel(void *args) {
     // On récupère les arguments
     channel_thread_args_t *channelArgs = (channel_thread_args_t *) args;
+    int effect = 0;
+    int channelId = channelArgs->channel;
+    int i;
     sem_t *syncSem = channelArgs->syncSem;
     sem_t *finishSem = channelArgs->finishSem;
+    sem_t *show_sem = channelArgs->showSem;
     sequencer_nav_t *seqNav = channelArgs->seqNav;
     music_t *music = channelArgs->music;
-    int channelId = channelArgs->channel;
     channel_t *channel = &(music->channels[channelId]);
-    int i;
     snd_pcm_t *pcm;
-    //int effect = read_proximity_sensor();
-    int effect = 0;
     // On initialise le pcm
     init_sound(&pcm);
     // On attend que tout le monde soit prêt
     sem_wait(syncSem);
     for(i = 0; i < channel->nbNotes; i++) {
+        snd_pcm_prepare(pcm);
+        effect = read_proximity_sensor();
         // On joue la note
         play_note(channel->notes[i], music->bpm, pcm, effect);
-        // On change la ligne jouée
-        // TODO : changer sequencer_nav_down pour ajouter le channel en paramètre -1 = current channel
-        if (seqNav->lines[channelId] >= seqNav->start[channelId] + SEQUENCER_CH_LINES - 4) seqNav->start[channelId] = seqNav->start[channelId] + SEQUENCER_CH_LINES - 3; // On défile vers le bas
-        if (seqNav->lines[channelId] < CHANNEL_MAX_NOTES - 1) seqNav->lines[channelId]++;
+        snd_pcm_drain(pcm);
+        sequencer_nav_down(seqNav, channelId);
+        // On met à jour la fenêtre
+        sem_post(show_sem);
     }
     // On libère le pcm
     end_sound(pcm);
@@ -768,8 +777,9 @@ void *play_channel(void *args) {
  * @return channel_thread_args_t 
  * @note Les arguments doivent être libérés après utilisation
  */
-channel_thread_args_t *create_channel_thread_args(sem_t *syncSem, sem_t *finishSem, sequencer_nav_t *seqNav, music_t *music, int channel) {
+channel_thread_args_t *create_channel_thread_args(sem_t *showSem, sem_t *syncSem, sem_t *finishSem, sequencer_nav_t *seqNav, music_t *music, int channel) {
     channel_thread_args_t *args = malloc(sizeof(channel_thread_args_t));
+    args->showSem = showSem;
     args->syncSem = syncSem;
     args->finishSem = finishSem;
     args->seqNav = seqNav;
@@ -1034,6 +1044,11 @@ void print_sequencer_lines(WINDOW *win, short channelId, music_t *music, sequenc
     // On affiche les informations
     int i;
     for(i = 0; i < SEQUENCER_CH_LINES - 3; i++) {
+        if(seqNav->start[channelId] + i >= CHANNEL_MAX_NOTES) {
+            note_t emptyNote = create_note(-1, -1, -1, -1, -1);
+            print_sequencer_note(win, emptyNote, channelId, i, seqNav, 0);
+            continue;
+        }
         note_t note = music->channels[channelId].notes[seqNav->start[channelId] + i];
         int isSelected = 0;
         if(seqNav->ch == channelId && seqNav->lines[channelId] == seqNav->start[channelId]+i) isSelected = 1;
@@ -1062,7 +1077,10 @@ void print_sequencer_note(WINDOW *win, note_t note, short ch, int line, sequence
     note2str(note, noteName); // On récupère le nom de la note
     instrument2str(note.instrument, instrumentName); // On récupère le nom de l'instrument
     wattron(win, COLOR_PAIR(COLOR_PAIR_SEQ) | REVERSE_IF_COL(seqNav->col, SEQUENCER_NAV_COL_LINE, isSelected) |  REVERSE_IF_COL(seqNav->col, SEQUENCER_NAV_COL_LINE, playModeSelected));
-    mvwprintw(win, 2+line, 1, "%04X", seqNav->start[ch] + line);
+    if(seqNav->start[ch] + line >= CHANNEL_MAX_NOTES) {
+        mvwprintw(win, 2+line, 1, "%s", "----");
+    }
+    else mvwprintw(win, 2+line, 1, "%04X", seqNav->start[ch] + line);
     wattroff(win, COLOR_PAIR(COLOR_PAIR_SEQ) | REVERSE_IFNOT_PLAYMODE(seqNav->playMode, playModeSelected));
     wattron(win, COLOR_PAIR(COLOR_PAIR_SEQ));
     mvwprintw(win, 2+line, 5, "|");
@@ -1178,37 +1196,4 @@ void show_sequencer_channels(WINDOW **channelWin, music_t *music, sequencer_nav_
     }
 }
 
-
-
-/**
- * @fn void res_read_rfid()
- * @brief lecture du rfid avec ressources
- */
-void res_read_rfid(char *rfid){
-		sem_t * sem_login = open_named_sem("SEM_LOGIN");
-		sem_t * sem_tag =  open_named_sem("SEM_TAG");
-    	post_sem(sem_login);
-    	
-    	//on wait la ressource pour lire le fichier
-    	wait_sem(sem_tag);
-		FILE *fichier;
-    	fichier = fopen("ressources/tag", "r"); // Ouvre le fichier en mode écriture ("r")
-
-    	if (fichier != NULL) { // Vérifie si le fichier a été ouvert avec succès
-        // Lit la valeur RFID depuis le fichier
-        if (fscanf(fichier, "%s", rfid) == 1) {
-            // Affiche la valeur RFID lue depuis le fichier
-            printf("La valeur RFID lue depuis le fichier est : %s\n", rfid);
-        } else {
-            printf("Erreur lors de la lecture du fichier.\n");
-            return 1; // Quitte le programme avec un code d'erreur
-        }
-        // Ferme le fichier
-        fclose(fichier);
-    } else {
-        // En cas d'erreur lors de l'ouverture du fichier
-        printf("Erreur lors de l'ouverture du fichier.\n");
-        return 1; // Quitte le programme avec un code d'erreur
-    }
-}
 
