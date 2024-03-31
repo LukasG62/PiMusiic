@@ -1,11 +1,11 @@
-## Variables
+# Variables
 
 # Default Raspberry Pi IP address
 IP_RPI?=192.168.234.131
 # Path to cross-compiler binaries
-PATH_CC_BINS?=/home/tomas/Bureau/'Objets Connectés'/tools-master/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin
+PATH_CC_BINS?=/home/lukas/LE3/OCC/tools-master/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin
 # Default target fake root directory
-TARGET_FAKEROOT_RPI?=
+TARGET_FAKEROOT_RPI?=/home/lukas/LE3/OCC/fakeroot 
 # Compiler command
 CCC?=$(PATH_CC_BINS)/arm-linux-gnueabihf-gcc-4.8.3
 # Programs to build
@@ -119,8 +119,7 @@ $(OBJ_DIR)/%-pi.o: $(SRC_DIR)/%.c $(INCLUDE_DIR)/%.h
 
 # installation rule
 install:
-	scp -r ressources $(BIN_RPI_DIR) pi@$(IP_RPI):testTomas/bin-pi
-
+	scp -r ressources $(BIN_RPI_DIR) pi@$(IP_RPI):PiMusiic
 # Clean rule
 clean:
 	rm -rf $(OBJ_DIR)/* $(BIN_PC_DIR)/* $(BIN_RPI_DIR)/* $(LIB_DIR)/*
