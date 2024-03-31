@@ -23,7 +23,7 @@
 /*              C O N S T A N T E S     S Y M B O L I Q U E S               */
 /* ------------------------------------------------------------------------ */
 #define BUTTON_ROW {BUTTON_ROW1,BUTTON_ROW2,BUTTON_ROW3,BUTTON_ROW4}
-#define BUTTON_COL {BUTTON_COL2,BUTTON_COL3,BUTTON_COL4}
+#define BUTTON_COL {BUTTON_COL1, BUTTON_COL2, BUTTON_COL3, BUTTON_COL4}
 
 #define RFID_SPEED 1000L /*!< Vitesse de communication avec le lecteur RFID */
 #define RFID_GPIO 22 /*!< GPIO du lecteur RFID */
@@ -66,24 +66,23 @@ typedef enum {
 	BUTTON_CH2NQUIT = (1 << 5),/*!< Valeur button pour CH2 ou pour quitter*/ //6
 	BUTTON_CH3NPLAY = (1 << 6),/*!< Valeur button pour CH3 ou pour jouer*/ //7
 	BUTTON_CHANGEMODE = (1 << 7), /*!< Valeur WP_Pin pour le bouton de changement de mode  */ //8
+	BUTTON_LINEUP = (1 << 8), /*!< Valeur WP_Pin pour le bouton de changement de ligne vers le haut */ //9
+	BUTTON_LINEDOWN = (1 << 9), /*!< Valeur WP_Pin pour le bouton de changement de ligne vers le bas */ //10
+	BUTTON_CLEARLINE = (1 << 10), /*!< Valeur WP_Pin pour le bouton de suppression de ligne */ //11
 	
 	BUTTON_ROW1 = 2, /*!< Valeur WP_Pin pour la première rangée de boutons*/
 	BUTTON_ROW2 = 3, /*!< Valeur WP_Pin pour la deuxième rangée de boutons*/
 	BUTTON_ROW3 = 21, /*!< Valeur WP_Pin pour la troisième rangée de boutons*/
 	BUTTON_ROW4 = 22, /*!< Valeur WP_Pin pour la quatrième rangée de boutons*/
 	
+	BUTTON_COL1 = 6, /*!< Valeur WP_Pin pour la première colonne de boutons*/
 	BUTTON_COL2 = 25, /*!< Valeur WP_Pin pour la deuxième colonne de boutons*/
 	BUTTON_COL3 = 24, /*!< Valeur WP_Pin pour la troisième colonne de boutons*/
 	BUTTON_COL4 = 23, /*!< Valeur WP_Pin pour la quatrième colonne de boutons*/
 	
 }buttons_bitmap_t;
 
-/**
- * @enum seven_segment_t
- * @brief Valeur des pins pour le 7 segments
- */
-
-
+typedef unsigned int bitmap_t; /*!< Type de bitmap pour les boutons*/
 
 /**
  * @enum seven_segment_digit_t
@@ -137,7 +136,7 @@ void init_wiringpi();
  * \brief tester si le bouton est pressé
  * \param button le bouton a tester
  */
-unsigned char is_button_pressed();
+bitmap_t is_button_pressed();
 
 /**
  * \fn display_bpm(int bpm);
@@ -166,6 +165,12 @@ int read_proximity_sensor();
  * GRP1_ATOME (2023) : Urban Prevost & Antoine Jedrezak
  */
 void init_rfid();
+
+/**
+ * @fn void res_read_rfid()
+ * @brief lecture du rfid avec ressources
+ */
+void res_read_rfid(char *rfid);
 
 
 #endif
