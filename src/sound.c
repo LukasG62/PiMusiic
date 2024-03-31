@@ -195,6 +195,8 @@ void init_sound(snd_pcm_t **pcm){
     snd_pcm_hw_params_set_periods(*pcm, hw_params, 10, 0); // On utilise 10 périodes
     snd_pcm_hw_params_set_period_time(*pcm, hw_params, 100000, 0); // 0.1 seconds
     snd_pcm_hw_params(*pcm, hw_params);
+    snd_pcm_nonblock(*pcm, 0); // On met le flux en mode bloquant
+    snd_pcm_prepare(*pcm); // On prépare le flux
 }
 
 /**
@@ -213,8 +215,8 @@ void end_sound(snd_pcm_t *pcm){
  * \param bpm le bpm de la musique 
  * \param note la note à jouer 
  */
-void play_note(note_t note,short bpm,snd_pcm_t *pcm,short effect) {
-
+void play_note(note_t note,short bpm,snd_pcm_t *pcm,short effect) {;
+    //snd_pcm_prepare(pcm); // On prépare le flux
 	//fonction qui transforme un note_t en freq ( réelle )
 	double freq = noteToFreq(note);
 	//calculer la durée de la note en fonction du bpm
@@ -227,6 +229,10 @@ void play_note(note_t note,short bpm,snd_pcm_t *pcm,short effect) {
 	
     // On écrit le buffer dans le flux
     snd_pcm_writei(pcm, buffer, time);
+    // On attends autant de temps que la note dure
+    //snd_pcm_drain(pcm); // On vide le tampon
+
+    free(buffer); // On libère la mémoire allouée pour le buffer
 }
 
 /**
@@ -388,20 +394,21 @@ short *triangle_wave(short *buffer, size_t sample_count, double freq) {
  * \param double freq fréquence d'échantillonage
  */
 short *warm_wave(short *buffer, size_t sample_count, double freq) {
-	int i = 0;
+    int i = 0;
     for (i = 0; i < sample_count; i++) {
-        double value = 0.0;
-        double t = ((double)i / SAMPLE_RATE) * freq;
+        float t = ((float)i / SAMPLE_RATE);
+        float value = 0.0;
         // Somme des sinus harmoniques
         int harmonics = 1;
-        for ( harmonics = 1;harmonics <= 10; harmonics++) {
-            value += sine_sound(t, 1, 0, freq * harmonics) / harmonics;
+        for (harmonics = 1; harmonics <= 10; harmonics++) {
+            value += sin(2 * M_PI * freq * harmonics * t) / harmonics;
         }
 
         buffer[i] = BASE_AMPLITUDE * value; // Ajustez l'amplitude selon vos besoins
     }
     return buffer;
 }
+
 
 double random_uniform() {
     return ((double)rand() / RAND_MAX) * 2.0 - 1.0; // Génère des valeurs aléatoires entre -1 et 1
@@ -589,31 +596,21 @@ short * pdt_convolution(short * buffer1, short * buffer2, size_t time) {
 
 
 void play_sample(char * fic,snd_pcm_t *pcm){
-	
-	
-FILE *f = fopen(fic, "rb");
-if(f==NULL)	{
-	printf("erreur fic");
-	return;
-}
-fseek(f, 0, SEEK_END);
-long file_size = ftell(f);
-fseek(f, 0, SEEK_SET);
-short *samples = (short*)malloc(file_size);
-fread(samples, 1, file_size, f);
-fclose(f);
+    FILE *f = fopen(fic, "rb");
+    if(f==NULL)	{
+        printf("erreur fic");
+        return;
+    }
+    fseek(f, 0, SEEK_END);
+    long file_size = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    short *samples = (short*)malloc(file_size);
+    fread(samples, 1, file_size, f);
+    fclose(f);
 
-snd_pcm_writei(pcm, samples, SAMPLE_RATE);
+    snd_pcm_writei(pcm, samples, SAMPLE_RATE);
 
-free(samples);
+    free(samples);
 
 }
-
-
-
-
-
-
-
-
 
