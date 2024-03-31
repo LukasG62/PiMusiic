@@ -33,7 +33,7 @@ void init_wiringpi(){
 	}
 	
 	int button_col[] = BUTTON_COL;
-	for(i=0;i<3;i++){
+	for(i=0;i<4;i++){
 		pinMode(button_col[i],OUTPUT);
 		digitalWrite(button_col[i],HIGH);
 	}
@@ -44,9 +44,29 @@ void init_wiringpi(){
  * \brief tester si le bouton est pressé
  * \param button le bouton a tester
  */
-unsigned char is_button_pressed(){
-	unsigned char bitmap = 0;
+bitmap_t is_button_pressed(){
+	bitmap_t bitmap = 0;
 	int level = 0;
+	//col1
+	digitalWrite(BUTTON_COL1, LOW);
+	//button LINEUP
+	level=!digitalRead(BUTTON_ROW1);
+	if(level == HIGH){
+		bitmap = bitmap | BUTTON_LINEUP;
+	}
+
+	//button LINEDOWN
+	level=!digitalRead(BUTTON_ROW3);
+	if(level == HIGH){
+		bitmap = bitmap | BUTTON_LINEDOWN;
+	}
+
+	//button CLEARLINE
+	level=!digitalRead(BUTTON_ROW4);
+	if(level == HIGH){
+		bitmap = bitmap | BUTTON_CLEARLINE;
+	}
+	digitalWrite(BUTTON_COL1,HIGH);
 	
 	//col2
 	digitalWrite(BUTTON_COL2, LOW);
@@ -113,13 +133,13 @@ void display_bpm(int bpm){
 	//on initialise I2C
 	int fd = wiringPiI2CSetup (SEVEN_SEGMENT_ADDR) ;
 	//on allume l'horloge
-	wiringPiI2CWriteReg16(fd,0x2,0x01);
+	wiringPiI2CWrite(fd,0x21);
 	//on configure int/row
-	wiringPiI2CWriteReg16(fd,0xA,0x00);
+	wiringPiI2CWrite(fd,0xA0);
 	//on allume l'écran 
-	wiringPiI2CWriteReg16(fd,0x8,0x01);
+	wiringPiI2CWrite(fd,0x81);
 	//on configure l'intensité
-	wiringPiI2CWriteReg16(fd,0xE,0x01);
+	wiringPiI2CWrite(fd,0xE1);
 	//X---
 	wiringPiI2CWriteReg16(fd,SEVEN_SEGMENT_D4_ADDR,(digits[bpm/1000]));//premier digit
 	bpm = bpm%1000;
@@ -213,5 +233,32 @@ void init_rfid() {
 
     /* read & set GID and UID from config file */
     if (read_conf_uid()!= 0) close_out(1);
+}
+
+/**
+ * @fn void res_read_rfid()
+ * @brief lecture du rfid avec ressources
+ */
+void res_read_rfid(char *rfid){
+		sem_t * sem_login = open_named_sem("SEM_LOGIN");
+		sem_t * sem_tag =  open_named_sem("SEM_TAG");
+    	post_sem(sem_login);
+    	
+    	//on wait la ressource pour lire le fichier
+    	wait_sem(sem_tag);
+		FILE *fichier;
+    	fichier = fopen("ressources/tag", "r"); // Ouvre le fichier en mode écriture ("r")
+
+    	if (fichier != NULL) { // Vérifie si le fichier a été ouvert avec succès
+        // Lit la valeur RFID depuis le fichier
+        if(fscanf(fichier, "%s", rfid) == 0) {
+            // En cas d'erreur lors de la lecture du fichier
+            *rfid = '\0';
+        }
+        // Ferme le fichier
+        fclose(fichier);
+    } 
+    return;
+    
 }
 

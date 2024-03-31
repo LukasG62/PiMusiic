@@ -20,7 +20,7 @@
  * @see send_data
  */
 void send_data_DGRAM(socket_t *socket, generic_t data, serialize_t serializeFunc, char *ip, int port) {
-    buffer_t buff;
+    char *buff = (char *) malloc(sizeof(buffer_t));
     if(serializeFunc == NULL) {
         DATA_DEBUG_PRINT("[SEND_DATA]\n[BEGIN]\n%s\n[END]\n", (char *)data);
         sendToSocket(socket, (char *)data, ip, port);
@@ -29,7 +29,7 @@ void send_data_DGRAM(socket_t *socket, generic_t data, serialize_t serializeFunc
     serializeFunc(data, buff);
     DATA_DEBUG_PRINT("[SEND_DATA]\n[BEGIN]\n%s\n[END]\n", buff);
     sendToSocket(socket, buff, ip, port);
-
+    free(buff);
 }
 
 /**
@@ -42,7 +42,8 @@ void send_data_DGRAM(socket_t *socket, generic_t data, serialize_t serializeFunc
  * @note Si serializeFunc est NULL, cela considére que data est un buffer_t
  */
 void send_data_stream(socket_t *socket , generic_t data, serialize_t serializeFunc) {
-    buffer_t buff;
+    // On evite d'allouer de la mémoire sur la stack car buffer_t est assez grand (262144)
+    char *buff = (char *) malloc(sizeof(buffer_t));
     if(serializeFunc == NULL) {
         writeToSocket(socket, (char *)data);
         DATA_DEBUG_PRINT("[SEND_DATA]\n[BEGIN]\n%s\n[END]\n", (char *)data);
@@ -52,6 +53,7 @@ void send_data_stream(socket_t *socket , generic_t data, serialize_t serializeFu
     serializeFunc(data, buff);
     DATA_DEBUG_PRINT("[SEND_DATA]\n[BEGIN]\n%s\n[END]\n", buff);
     writeToSocket(socket, buff);
+    free(buff);
 }
 
 /**
@@ -92,7 +94,7 @@ void send_data(socket_t *socket, generic_t data, serialize_t serializeFunc, ...)
  * @see recv_data
 */
 void recv_data_stream(socket_t *socket, generic_t data, serialize_t dserializeFunc) {
-    buffer_t buff;
+    char *buff = (char *) malloc(sizeof(buffer_t));
     readFromSocket(socket, MAX_BUFF, buff);
     DATA_DEBUG_PRINT("[RECV_DATA]\n[BEGIN]\n%s\n[END]\n", buff);
     if(dserializeFunc == NULL) {
@@ -100,6 +102,7 @@ void recv_data_stream(socket_t *socket, generic_t data, serialize_t dserializeFu
     } else {
         dserializeFunc(buff, data);
     }
+    free(buff);
 }
 
 /**
@@ -111,7 +114,7 @@ void recv_data_stream(socket_t *socket, generic_t data, serialize_t dserializeFu
  * @note A n'utiliser que pour les sockets UDP
  */
 void recv_data_DGRAM(socket_t *socket, generic_t data, serialize_t dserializeFunc) {
-    buffer_t buff;
+    char *buff = (char *) malloc(sizeof(buffer_t));
     recvFromSocket(socket, MAX_BUFF, buff);
     DATA_DEBUG_PRINT("[RECV_DATA]\n[BEGIN]\n%s\n[END]\n", buff);
     if(dserializeFunc == NULL) {
@@ -119,6 +122,7 @@ void recv_data_DGRAM(socket_t *socket, generic_t data, serialize_t dserializeFun
     } else {
         dserializeFunc(buff, data);
     }
+    free(buff);
 }
 
 /**

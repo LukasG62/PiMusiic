@@ -16,7 +16,6 @@
 #include "mysyscall.h"
 #include "sound.h"
 #include <time.h>   
-#include "mysyscall.h"
 
 #define RPI_COLS 106 /*!< Nombre de colonnes de la fenêtre sur le RPI */
 #define RPI_LINES 29 /*!< Nombre de lignes de la fenêtre sur le RPI */
@@ -56,6 +55,8 @@
 #define KEY_BUTTON_CH3NPLAY 'r'
 #define KEY_BUTTON_CH2NQUIT 'e'
 #define KEY_BUTTON_CH1NSAVE 'z'
+#define KEY_BUTTON_LINEDOWN 'c'
+#define KEY_BUTTON_LINEUP 'v'
 
 
 
@@ -155,6 +156,7 @@ typedef struct
 
 // void *args[] = {&syncSem, &finishSem, &seqNav, music, i};
 typedef struct {
+    sem_t *showSem;
     sem_t *syncSem;
     sem_t *finishSem;
     sequencer_nav_t *seqNav;
@@ -237,14 +239,14 @@ choices_t show_create_music_menu(music_t *music, char *rfid);
  * @brief permet de passer d'une ligne à une autre dans le séquenceur
  * @param nav la structure de navigation
  */
-void sequencer_nav_up(sequencer_nav_t *nav);
+void sequencer_nav_up(sequencer_nav_t *nav, int channelId);
 
 /**
  * @fn void sequencer_nav_down(sequencer_nav_t *nav)
  * @brief permet de passer d'une ligne à une autre dans le séquenceur
  * @param nav la structure de navigation
  */
-void sequencer_nav_down(sequencer_nav_t *nav);
+void sequencer_nav_down(sequencer_nav_t *nav, int channelId);
 
 /**
  * @fn void sequencer_nav_left(sequencer_nav_t *nav)
@@ -285,7 +287,6 @@ choices_t show_sequencer(music_t *music, char *connected);
  */
 int getchr_wiringpi();
 
-
 /**
  * @fn void play_music(music_t *music)
  * @brief Joue la musique et affiche les lignes jouées
@@ -304,7 +305,7 @@ void *play_channel(void *channelId);
  * @return channel_thread_args_t 
  * @note Les arguments doivent être libérés après utilisation
  */
-channel_thread_args_t *create_channel_thread_args(sem_t *syncSem, sem_t *finishSem, sequencer_nav_t *seqNav, music_t *music, int channel);
+channel_thread_args_t *create_channel_thread_args(sem_t *showSem, sem_t *syncSem, sem_t *finishSem, sequencer_nav_t *seqNav, music_t *music, int channel);
 
 #endif // GRAPHIC_SEQ_H
 
