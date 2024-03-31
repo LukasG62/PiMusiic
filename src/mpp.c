@@ -12,6 +12,21 @@
 /**********************************************************************************************************************/
 
 /**
+ * @fn void write_music(music_t *music, FILE *file);
+ * @param music  La musique à écrire
+ * @param file   Le fichier dans lequel écrire la musique
+ */
+void write_music(music_t *music, FILE *file);
+
+/**
+ * @fn void read_music(music_t *music, FILE *file);
+ * @brief Lit une musique depuis un fichier 
+ * @param music La musique à remplir
+ * @param file Le fichier depuis lequou peuvenel lire la musique
+ */
+void read_music(music_t *music, FILE *file);
+
+/**
  * @fn void write_list_music(musicId_list_t *list, FILE *file);
  * @brief Ecrit une liste d'identifiants de musiques dans un fichier
  * @param list Liste d'identifiants de musiques
@@ -50,10 +65,9 @@ void serialize_music(music_t *music, buffer_t buffer);
  * @brief Désérialise une musique contenue dans un buffer
  * @param token La position dans le buffer ou se trouve la musique sérialisée
  * @param music La musique désérialisée
- * @param saveptr Le pointeur de sauvegarde pour strtok_r
  * @warning La musique doit être initialisée avant d'appeler cette fonction
  */
-void deserialize_music(char *token, music_t *music, char *saveptr);
+void deserialize_music(char *token, music_t *music);
 
 
 /**********************************************************************************************************************/
@@ -157,20 +171,25 @@ void deserialize_mpp_request(buffer_t buffer, mpp_request_t *request) {
     // strtok n'est pas thread safe, on utilise strtok_r donc pour cela on doit déclarer un pointeur saveptr
     char *saveptr = NULL;
     char *token = NULL;
-  
+    char *bufferCp = malloc(strlen(buffer) + 1);
+    strcpy(bufferCp, buffer);
     // lecture de la première ligne
     token = strtok_r(buffer, "\n", &saveptr);
     sscanf(token, "%d %s %ld", (int *) &request->code, request->rfidId, &request->musicId);
+
     // lecture des musiques si elles existent
     token = strtok_r(NULL, "\n", &saveptr);
     if(token != NULL) {
+        // On trouve ou commence la musique dans la copie du buffer
+        char *tokenCp = strstr(bufferCp, token);
         request->music = (music_t *)malloc(sizeof(music_t));
         init_music(request->music, 0);
-        deserialize_music(token, request->music, saveptr);
+        deserialize_music(tokenCp, request->music);
     }
     else {
         request->music = NULL;
     }
+    free(bufferCp);
 }
 
 /**
@@ -209,7 +228,9 @@ void deserialize_mpp_response(buffer_t buffer, mpp_response_t *response) {
     // strtok n'est pas thread safe, on utilise strtok_r donc pour cela on doit déclarer un pointeur saveptr
     // TODO : robustesse !!
     char *saveptr = NULL;
+    char *bufferCp = malloc(strlen(buffer) + 1);
     int i;
+    strcpy(bufferCp, buffer);
     // lecture de la première ligne
     char *token = strtok_r(buffer, "\n", &saveptr);
     sscanf(token, "%d %s", (int *) &response->code, response->username);
@@ -230,9 +251,11 @@ void deserialize_mpp_response(buffer_t buffer, mpp_response_t *response) {
         // On lit la musique
         token = strtok_r(NULL, "\n", &saveptr);
         if(token != NULL) {
+            // On trouve ou commence la musique dans la copie du buffer
+            char *tokenCp = strstr(bufferCp, token);
             response->music = (music_t *)malloc(sizeof(music_t));
             init_music(response->music, 0);
-            deserialize_music(token, response->music, saveptr);
+            deserialize_music(tokenCp, response->music);
         } 
         else response->music = NULL;
 
@@ -241,6 +264,7 @@ void deserialize_mpp_response(buffer_t buffer, mpp_response_t *response) {
         response->musicIds = NULL;
         response->music = NULL;
     }
+    free(bufferCp);
 }
 
 /**
@@ -404,9 +428,9 @@ void get_music_list_from_db(musicId_list_t *list, char *rfidId) {
 int add_music_to_db(music_t *music, char *rfidId) {
     char filename[255];
     sprintf(filename, "%s/%s/%s/%s", MPP_DB_FOLDER, MPP_DB_MUSIC_FOLDER, rfidId, MPP_DB_MUSIC_FILE);
-    FILE *file = fopen(filename, "rb+");
+    FILE *file = fopen(filename, "r+");
     if(file == NULL) {
-        file = fopen(filename, "wb+"); // On crée le fichier s'il n'existe pas
+        file = fopen(filename, "w+"); // On crée le fichier s'il n'existe pas
         if(file == NULL) return -1;
     }
     // On écrit l'identifiant de la musique dans le fichier
@@ -421,11 +445,11 @@ int add_music_to_db(music_t *music, char *rfidId) {
 
     // On écrit la musique dans un fichier séparé
     sprintf(filename, "%s/%s/%s/%ld.mipi", MPP_DB_FOLDER, MPP_DB_MUSIC_FOLDER, rfidId, music->date.tv_sec);
-    file = fopen(filename, "wb");
+    file = fopen(filename, "w");
 
     if(file == NULL) return -1;
 
-    fwrite(music, sizeof(music_t), 1, file);
+    write_music(music, file);
     fclose(file);
     return 0;
 }
@@ -444,7 +468,7 @@ void get_music_from_db(music_t *music, time_t musicId, char *rfidId) {
     if(file == NULL) {
         return;
     }
-    fread(music, sizeof(music_t), 1, file);
+    read_music(music, file);
     fclose(file);
 
 }
@@ -695,11 +719,10 @@ void serialize_music(music_t *music, buffer_t buffer) {
     sprintf(buffer, "%s%ld %d\n", buffer, music->date.tv_sec, music->bpm);
     // On parcourt chaque channel et on écrit seulement les notes non vides
     for(i = 0; i < MUSIC_MAX_CHANNELS; i++) {
-        for(j = 0; j < CHANNEL_MAX_NOTES; j++) {
-            note_t note = music->channels[i].notes[j];
-            if(note.id != 0) {
-                sprintf(buffer, "%s%d %d %d %d %d\n", buffer, j, note.id, note.octave, note.instrument, note.time);
-            }
+        channel_t *channel = &music->channels[i];
+        for(j = 0; j < channel->nbNotes; j++) {
+            note_t *note = &channel->notes[j];
+            sprintf(buffer, "%s%d %d %d %d %d\n", buffer, j, note->id, note->octave, note->instrument, note->time);
         }
         // On marque la fin du channel
         sprintf(buffer, "%sP\n", buffer);
@@ -711,28 +734,31 @@ void serialize_music(music_t *music, buffer_t buffer) {
  * @brief Désérialise une musique contenue dans un buffer
  * @param token La position dans le buffer ou se trouve la musique sérialisée
  * @param music La musique désérialisée
- * @param saveptr Le pointeur de sauvegarde pour strtok_r
  * @warning La musique doit être initialisée avant d'appeler cette fonction
  */
-void deserialize_music(char *token, music_t *music, char *saveptr) {
+void deserialize_music(char *token, music_t *music) {
     int channelCount = 0;
+    char *line = NULL;
+    char *saveptr = NULL;
     scale_t scale = init_scale();
-    sscanf(token, "%ld %hd", &music->date.tv_sec, &music->bpm);
-    while (token != NULL && channelCount < MUSIC_MAX_CHANNELS) {
-        token = strtok_r(NULL, "\n", &saveptr);
-        if (token != NULL) {
+    line = strtok_r(token, "\n", &saveptr);
+    sscanf(line, "%ld %hd", &music->date.tv_sec, &music->bpm);
+
+    while (line != NULL && channelCount < MUSIC_MAX_CHANNELS) {
+        line = strtok_r(NULL, "\n", &saveptr);
+        if (line != NULL) {
             int channelId = channelCount;
             channel_t *channel = &music->channels[channelId];
-            while (token != NULL && *token != 'P') {
-                int line = 0;
+            while (line != NULL && *line != 'P') {
+                int index = 0;
                 // on récupère d'abord la ligne
-                sscanf(token, "%d", &line);
+                sscanf(line, "%d", &index);
                 // on récupère les notes
-                note_t *note = &channel->notes[line];
-                sscanf(token, "%d %hd %hd %d %d", &line, &note->id, &note->octave, (int *)&note->instrument, (int *)&note->time);
-                note->frequency = get_note_freq(note->id, &scale);
-                update_channel_nbNotes(channel, line);
-                token = strtok_r(NULL, "\n", &saveptr);
+                note_t *note = &channel->notes[index];
+                sscanf(line, "%d %hd %hd %d %d", &index, &note->id, &note->octave, (int *)&note->instrument, (int *)&note->time);
+                note->frequency = get_note_freq(note, &scale);
+                update_channel_nbNotes(channel, index);
+                line = strtok_r(NULL, "\n", &saveptr);
             }
             channelCount++;
         }
@@ -747,7 +773,6 @@ void deserialize_music(char *token, music_t *music, char *saveptr) {
  */
 void write_list_music(musicId_list_t *list, FILE *file) {
     int i;
-
     int a = fwrite(&list->size, sizeof(int), 1, file);
     for(i = 0; i < list->size; i++) {
         a += fwrite(&list->musicIds[i], sizeof(time_t), 1, file);
@@ -769,5 +794,39 @@ void read_list_music(musicId_list_t *list, FILE *file) {
     while(fread(&musicId, sizeof(time_t), 1, file) == 1) {
         add_music_id(list, musicId);
     }
+}
+
+/**
+ * @fn void write_music(music_t *music, FILE *file);
+ * @param music  La musique à écrire
+ * @param file   Le fichier dans lequel écrire la musique
+ */
+void write_music(music_t *music, FILE *file) {
+    // On change de stragégie pour l'écriture des musiques
+    // On écrit la version sérialisée de la musique dans le fichier
+    // Plus légère et plus modulaire (si la structure de la musique change, on pourra toujours lire les anciennes musiques)
+    //fwrite(music, sizeof(music_t), 1, file);
+    char *buffer = (char *) malloc(sizeof(buffer_t));
+    serialize_music(music, buffer);
+    fprintf(file, "%s", buffer);
+    free(buffer);
+}
+
+/**
+ * @fn void read_music(music_t *music, FILE *file);
+ * @brief Lit une musique depuis un fichier 
+ * @param music La musique à remplir
+ * @param file Le fichier depuis lequel lire la musique
+ */
+void read_music(music_t *music, FILE *file) {
+    // On change de stragégie pour la lecture des musiques
+    // On lit la version sérialisée de la musique dans le fichier
+    // Plus légère et plus modulaire (si la structure de la musique change, on pourra toujours lire les anciennes musiques)
+    char *buffer = (char *) malloc(sizeof(buffer_t));
+    fread(buffer, sizeof(buffer_t), 1, file);
+    fprintf(stderr, "READ_MUSIC : %s\n", buffer);
+    fflush(stderr);
+    deserialize_music(buffer, music);
+    free(buffer);
 }
 
