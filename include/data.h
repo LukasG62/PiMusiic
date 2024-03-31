@@ -19,7 +19,7 @@
 
 
 // Creation des types de données
-#define MAX_BUFF 4096 //!< Taille maximale du buffer
+#define MAX_BUFF 262144 //!< Taille maximale du buffer (2^18) puissance proche de 2 de la taille maximale
 
 typedef char buffer_t[MAX_BUFF]; //!< Type de buffer
 typedef void* generic_t; //!< Type de donnée générique
