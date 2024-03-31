@@ -1,7 +1,8 @@
 /**
- * \file syscall.h
- * \brief librairie de fonctions de manipulation d'appels systèmes
- * \version 1.0
+ * @file mysyscall.h
+ * @author Lukas Grando
+ * @brief Interface de la couche d'abstraction pour les appels systèmes
+ * @version 1.0
  */
 #ifndef __MY_SYSCALL_H__
 #define __MY_SYSCALL_H__
@@ -37,7 +38,7 @@ typedef void *(*pf_t)(void *);
 /*                      M A C R O - F O N C T I O N S                       */
 /* ------------------------------------------------------------------------ */
 #define CHECK_T(status, msg)          \
-    if (status != 0)                  \
+    if ((status) != 0)                  \
     {                                 \
         fprintf(stderr, "%s\n", msg); \
     }
@@ -132,10 +133,11 @@ void display_pthread_attr(pthread_attr_t *attr, char *prefix);
  * @param thread Le thread à créer
  * @param start_routine La fonction à exécuter
  * @param thread_number Le numéro du thread
+ * @param state L'état du thread (detached ou joinable)
  * @return Le thread créé
  * @details La fonction créer un thread
  */
-pthread_t create_thread(pthread_t *thread, void *(*start_routine)(void *), long thread_number);
+pthread_t create_thread(pthread_t *thread, void *(*start_routine)(void *), long thread_number, int state);
 
 /* SECTION : SEM */
 
